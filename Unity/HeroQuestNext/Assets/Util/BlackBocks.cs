@@ -88,6 +88,19 @@ public class BlackBocks
     }
 
     public static void AddToMeshArrays(
+    Vector3[] vVertices,
+    Vector2[] vUVs,
+    int[] iTriangles,
+    int index,
+    Vector3 vPos,
+    float fRot,
+    Vector3 vBaseSize,
+    Rect rUVRect
+    )
+    {
+        AddToMeshArrays(vVertices, vUVs, iTriangles, index, vPos, fRot, vBaseSize, new Vector2(rUVRect.xMin, rUVRect.yMin), new Vector2(rUVRect.xMax, rUVRect.yMax));
+    }
+    public static void AddToMeshArrays(
         Vector3[] vVertices,
         Vector2[] vUVs,
         int[] iTriangles,
@@ -175,10 +188,63 @@ public class BlackBocks
     {
         for (int i = 0; i < inBaseArray.Length; i++)
         {
-            inBaseArray[i].r *= inTint.r/255f;
-            inBaseArray[i].g *= inTint.g/255f;
-            inBaseArray[i].b *= inTint.b/255f;
+            inBaseArray[i].r *= inTint.r;
+            inBaseArray[i].g *= inTint.g;
+            inBaseArray[i].b *= inTint.b;
         }
+    }
+
+    public static void TintColorArrayInsideMask(Color[] inBaseArray, Color inTint, Color[] inMask)
+    {
+        for (int i = 0; i < inBaseArray.Length; i++)
+        {
+            if (inMask[i].a > 0)
+            {
+                Color cBaseColor = inBaseArray[i];
+                Color cFullColor = inTint* inBaseArray[i];
+                float fInterpolate = inMask[i].a;
+
+                inBaseArray[i].r += (cFullColor.r - cBaseColor.r) * fInterpolate;
+                inBaseArray[i].g += (cFullColor.g - cBaseColor.g) * fInterpolate;
+                inBaseArray[i].b += (cFullColor.b - cBaseColor.b) * fInterpolate;
+                
+            }
+        }
+    }
+
+    public static void MergeColorArray(Color[] inBaseArray, Color[] inOverlayArray)
+    {
+        for (int i = 0; i < inBaseArray.Length; i++)
+        {
+            if(inOverlayArray[i].a > 0)
+            {
+                if(inOverlayArray[i].a >=1)
+                {
+                    inBaseArray[i] = inOverlayArray[i];
+                }
+                else
+                {
+                    float fAlpha = inOverlayArray[i].a;
+                    inBaseArray[i].r += (inOverlayArray[i].r - inBaseArray[i].r) * fAlpha;
+                    inBaseArray[i].g += (inOverlayArray[i].g - inBaseArray[i].g) * fAlpha;
+                    inBaseArray[i].b += (inOverlayArray[i].b - inBaseArray[i].b) * fAlpha;
+                    inBaseArray[i].a +=  fAlpha;
+                }
+            }
+        }
+    }
+
+    public static Texture2D Texture2DScale(
+        Texture2D inTexture,
+        Rect inRect)
+    {
+        RenderTexture rTarget = new RenderTexture((int)inRect.width, (int)inRect.height, 24);
+        RenderTexture.active = rTarget;
+        Graphics.Blit(inTexture, rTarget);
+        Texture2D rReturn = new Texture2D(rTarget.width, rTarget.height);
+        rReturn.ReadPixels(new Rect(0, 0, rTarget.width, rTarget.height), 0, 0);
+        rReturn.Apply();
+        return rReturn;
     }
 }
 

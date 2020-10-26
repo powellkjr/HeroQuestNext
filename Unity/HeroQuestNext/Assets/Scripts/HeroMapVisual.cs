@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Xml.Serialization;
 using UnityEngine;
+using UnityEditor;
 
 public class HeroMapVisual : MonoBehaviour
 {
@@ -13,122 +14,214 @@ public class HeroMapVisual : MonoBehaviour
     [SerializeField] public bool bDebugEnabled;
 
     [SerializeField] private Texture2D tHeroMapBigEmpty;
-    [SerializeField] private Texture2D tHeroBaseTile;
-    [SerializeField] private Texture2D tHeroWallTile;
+    [SerializeField] private Texture2D tHeroBaseTiles;
+    [SerializeField] private Texture2D tHeroWallTiles;
+    [SerializeField] private Texture2D tFurnitureTiles;
+    [SerializeField] private Texture2D tFurnitureTilesMask;
+    [SerializeField] private Texture2D tNavTiles;
+    [SerializeField] private Texture2D tNavTilesMask;
+
+    private Texture2D tHeroBasePixels;
 
     [SerializeField] private Texture2D tHeroMapMainSpriteSheet;
+    //[SerializeField] private Texture2D tHeroMapMainSpriteSheetCheck;
     [SerializeField] private Material mHeroMapVisualMaterial;
 
 
-    private int iPageWidth = 6;
-    private int iPageHeight = 5;
-    private int iPageOffset = 200;
+    [System.Serializable]
+    struct sSrcSpriteIndexAndSrcRect
+    {
+        public int iSrcSpriteIndex;
+        public Rect vSrcUVPixels;
+    }
+
+
+
+    public class dSpriteIndexToUV : Dictionary<int, Rect> { }
+
+
+    //[SerializeField] private sSrcSpriteIndexAndSrcRect[] arrBaseTileSrcSpritePixelRect;
+    //[SerializeField] private sSrcSpriteIndexAndSrcRect[] arrWallTileSrcSpritePixelRect;
+    //[SerializeField] private sSrcSpriteIndexAndSrcRect[] arrNavTileSrcSpritePixelRect;
+    //[SerializeField] private sSrcSpriteIndexAndSrcRect[] arrFurnitureTileSrcSpritePixelRect;
+    
+    private sSrcSpriteIndexAndSrcRect[] arrBaseTileSrcSpritePixelRect = new sSrcSpriteIndexAndSrcRect[iNumRooms];
+    private sSrcSpriteIndexAndSrcRect[] arrWallTileSrcSpritePixelRect = new sSrcSpriteIndexAndSrcRect[iNumRooms];
+    private sSrcSpriteIndexAndSrcRect[] arrNavTileSrcSpritePixelRect = new sSrcSpriteIndexAndSrcRect[iNumnavTiles];
+    private sSrcSpriteIndexAndSrcRect[] arrFurnitureTileSrcSpritePixelRect = new sSrcSpriteIndexAndSrcRect[iNumFurnitureTiles];
+
+
+
+    private static int iNumRooms = System.Enum.GetValues(typeof(eRoomIDs)).Length;
+    private static int iNumPages = System.Enum.GetValues(typeof(eSpritePages)).Length;
+    private static int iNumnavTiles = System.Enum.GetValues(typeof(eNavTiles)).Length;
+    private static int iNumFurnitureTiles = System.Enum.GetValues(typeof(eFurniture)).Length;
+
+    private int iNumLayers = 6;
+    //int[] iPageStartsAt= new int[iNumPages];
+    
     private const int iWall = 15;
     private const int iBaseTile = 128;
     private static Vector2Int[] iCellXY;
     private Vector2Int vBaseTileReference = new Vector2Int(iBaseTile, iBaseTile);
     private Vector2Int vWallTileReference = new Vector2Int(iWall, iBaseTile);
+
+    private Dictionary<(eSpritePages, int), Rect> dSpritePageAndIndexToMainUVRect = new Dictionary<(eSpritePages, int), Rect>();
     
 
+    private enum eSpritePages
+    {
+        BaseTiles,
+        WallTiles,
+        NavTiles,
+        FurnitureTiles,
+    }
 
     private void Awake()
     {
-        CacheCellXY();
         mMesh = new Mesh { };
         GetComponent<MeshFilter>().mesh = mMesh;
-        
-        tHeroMapMainSpriteSheet = new Texture2D(tHeroMapBigEmpty.width, tHeroMapBigEmpty.height, TextureFormat.RGBA32, true);
-
-        Color[] cRoomColors = new Color[28];
-        Color[] cWallColors = new Color[28];
-
-        for (int i = 0; i < cRoomColors.Length;i++)
-        {
-            cRoomColors[i] = BlackBocks.GetRandomColor(new Color(128, 128, 128), new Color(212, 212, 212));
-            cWallColors[i] = BlackBocks.GetRandomColor(new Color(64, 64, 64), new Color(128, 128, 128));
-        }
+        //tHeroBasePixels = GetComponent<Texture2D>();
 
 
-        Color[] arrSpriteSheetBasePixels = tHeroMapBigEmpty.GetPixels(0, 0, tHeroMapBigEmpty.width, tHeroMapBigEmpty.height);
-        tHeroMapMainSpriteSheet.SetPixels(0, 0, tHeroMapBigEmpty.width, tHeroMapBigEmpty.height, arrSpriteSheetBasePixels);
+        //tHeroMapMainSpriteSheet = new Texture2D(iNumFurnitureTiles * vBaseTileReference.x, iBaseTile * iNumPages, TextureFormat.RGBA32, true);
+        //Color[] cClear = tHeroMapMainSpriteSheet.GetPixels(0, 0, tHeroBasePixels.width, tHeroBasePixels.height);
+        //for(int i =0; i < cClear.Length; i++)
+        //{
+        //    cClear[i] = Color.clear;
+        //}
+        //tHeroMapMainSpriteSheet.SetPixels(0, 0, tHeroMapMainSpriteSheet.width, tHeroMapMainSpriteSheet.height, cClear);
+
+        tHeroMapMainSpriteSheet = new Texture2D(1, 1, TextureFormat.RGBA32, true);
+        tHeroMapMainSpriteSheet.SetPixel(0, 0, Color.clear);
+        tHeroMapMainSpriteSheet.Resize(iNumFurnitureTiles * vBaseTileReference.x, iBaseTile * iNumPages);
+
+
+
         tHeroMapMainSpriteSheet.Apply();
-
-        //Color[] arrBasePixels = tHeroBaseTile.GetPixels(0, 0, tHeroBaseTile.width, tHeroBaseTile.height);
-        Color[] arrBasePixels;
-        for (int i =0; i < cRoomColors.Length; i++)
-        {
-            arrBasePixels = tHeroBaseTile.GetPixels(0, 0, vBaseTileReference.x, vBaseTileReference.y);
-            BlackBocks.TintColorArray(arrBasePixels, cRoomColors[i]);
-            tHeroMapMainSpriteSheet.SetPixels(vBaseTileReference.x * i, iPageOffset * 0, vBaseTileReference.x, vBaseTileReference.y, arrBasePixels);
-            tHeroMapMainSpriteSheet.Apply();
-        }
-        //Color[] arrBasePixels = tHeroBaseTile.GetPixels(0, 0, iBaseTile, iBaseTile);
-        //tHeroMapMainSpriteSheet.SetPixels(0, iPageOffset * 0, tHeroBaseTile.width, tHeroBaseTile.height, arrBasePixels);
-        //tHeroMapMainSpriteSheet.Apply();
-
-        Color[] arrWallPixels;
-        for (int i = 0; i < cRoomColors.Length; i++)
-        {
-            arrWallPixels = tHeroBaseTile.GetPixels(0, 0, vWallTileReference.x, vWallTileReference.y);
-            BlackBocks.TintColorArray(arrWallPixels, cWallColors[i]);
-            tHeroMapMainSpriteSheet.SetPixels(vWallTileReference.x * i, iPageOffset * 1, vWallTileReference.x, vWallTileReference.y, arrWallPixels);
-            tHeroMapMainSpriteSheet.Apply();
-        }
-        //Color[] arrWallPixels = tHeroWallTile.GetPixels(0, 0, tHeroWallTile.width, tHeroWallTile.height);
-        //tHeroMapMainSpriteSheet.SetPixels(0, iPageOffset * 1, tHeroWallTile.width, tHeroWallTile.height, arrWallPixels);
-        //tHeroMapMainSpriteSheet.Apply();
-
-
-
-
-
-
         mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
-        //UpdateHeroMapVisuals();
+
+
+
+        Color[] arrBaseTileColors = new Color[iNumRooms];
+        Color[] arrWallTileColors = new Color[iNumRooms];
+        Color[] arrNavTileColors = new Color[1];
+        Color[] arrFurnitureTileColors = new Color[1];
+
+        for (int i = 0; i < iNumRooms; i++)
+        {
+            arrBaseTileColors[i] = BlackBocks.GetRandomColor(new Color(.5f, .5f, 0, 1), new Color(.9f, .9f, 0, 1));
+            arrWallTileColors[i] = BlackBocks.GetRandomColor(new Color(.1f, .1f, 0, 1), new Color(.4f, .4f, 0, 1));
+            arrBaseTileSrcSpritePixelRect[i].iSrcSpriteIndex = i;
+            arrBaseTileSrcSpritePixelRect[i].vSrcUVPixels = new Rect(0, 0, iBaseTile, iBaseTile);
+
+            arrWallTileSrcSpritePixelRect[i].iSrcSpriteIndex = i;
+            arrWallTileSrcSpritePixelRect[i].vSrcUVPixels = new Rect(0, 0, iBaseTile, iBaseTile);
+        }
+        arrNavTileColors[0] = Color.white;
+        arrFurnitureTileColors[0] = Color.white;
+
+
+
+        string sTilePath = AssetDatabase.GetAssetPath(tFurnitureTiles);
+        Object[] sprites = AssetDatabase.LoadAllAssetsAtPath(sTilePath);
+
+
+        foreach (Object aObject in sprites)
+        {
+            if (aObject is Sprite)
+            {
+                Sprite aSprite = (Sprite)aObject;
+                Debug.Log(aSprite.name.ToString());
+                string[] aPath = aSprite.name.Split("."[0]);
+                if (aPath.Length == 3)
+                {
+                    int i = int.Parse(aPath[2]);
+                    switch (aPath[1])
+                    {
+                        case "NavTiles":
+                            arrNavTileSrcSpritePixelRect[i].vSrcUVPixels = aSprite.rect;
+                            arrNavTileSrcSpritePixelRect[i].iSrcSpriteIndex = i;
+                            break;
+                        case "FurnitureTiles":
+                            arrFurnitureTileSrcSpritePixelRect[i].vSrcUVPixels = aSprite.rect;
+                            arrFurnitureTileSrcSpritePixelRect[i].iSrcSpriteIndex = i;
+                            break;
+                    }
+                }
+
+            }
+        }
+
+
+
+
+        AddNewTilesToSpritePageAndIndexToMainUVRect(tHeroBaseTiles, tHeroBaseTiles, arrBaseTileSrcSpritePixelRect, vBaseTileReference, eSpritePages.BaseTiles, arrBaseTileColors);
+        mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
+
+        AddNewTilesToSpritePageAndIndexToMainUVRect(tHeroWallTiles, tHeroBaseTiles, arrWallTileSrcSpritePixelRect, vWallTileReference, eSpritePages.WallTiles, arrWallTileColors);
+        mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
+
+        AddNewTilesToSpritePageAndIndexToMainUVRect(tNavTiles, tNavTilesMask, arrNavTileSrcSpritePixelRect, vBaseTileReference, eSpritePages.NavTiles, arrNavTileColors);
+        mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
+
+        AddNewTilesToSpritePageAndIndexToMainUVRect(tFurnitureTiles, tFurnitureTilesMask, arrFurnitureTileSrcSpritePixelRect, vBaseTileReference, eSpritePages.FurnitureTiles, arrFurnitureTileColors);
+        mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
+
+        //tHeroMapMainSpriteSheet = new Texture2D(iNumFurnitureTiles * vBaseTileReference.x, iBaseTile * iNumPages, TextureFormat.RGBA32, true);
+        Color[] cClear = tHeroMapMainSpriteSheet.GetPixels(0, 0, tHeroMapMainSpriteSheet.width, tHeroMapMainSpriteSheet.height);
+        for (int i = 0; i < cClear.Length; i++)
+        {
+            if (cClear[i].a < 1)
+            {
+                cClear[i] = Color.clear;
+                //cClear[i] = new Color(1,1,1,0);
+            }
+        }
+        tHeroMapMainSpriteSheet.SetPixels(0, 0, tHeroMapMainSpriteSheet.width, tHeroMapMainSpriteSheet.height, cClear);
+        tHeroMapMainSpriteSheet.Apply();
 
 
 
 
     }
 
-    private void CacheCellXY()
+    private void AddNewTilesToSpritePageAndIndexToMainUVRect(
+        Texture2D inSpirteSheet,
+        Texture2D inSpriteMask,
+        sSrcSpriteIndexAndSrcRect[] inSrcSpriteIndexAndSrcRectArray,
+        Vector2Int inRefSize,
+        eSpritePages inSpritePage,
+        Color[] inTint)
     {
-        if (iCellXY != null) return;
+        foreach (sSrcSpriteIndexAndSrcRect aSrcSpriteIndexAndSrcRect in inSrcSpriteIndexAndSrcRectArray)
+        {
+            //copy
+            Color[] arrSrcPixels = inSpirteSheet.GetPixels(
+                (int)aSrcSpriteIndexAndSrcRect.vSrcUVPixels.x, 
+                (int)aSrcSpriteIndexAndSrcRect.vSrcUVPixels.y, 
+                (int)aSrcSpriteIndexAndSrcRect.vSrcUVPixels.width, 
+                (int)aSrcSpriteIndexAndSrcRect.vSrcUVPixels.height);
+            Color[] arrMaskPixels = inSpriteMask.GetPixels(
+                (int)aSrcSpriteIndexAndSrcRect.vSrcUVPixels.x,
+                (int)aSrcSpriteIndexAndSrcRect.vSrcUVPixels.y,
+                (int)aSrcSpriteIndexAndSrcRect.vSrcUVPixels.width,
+                (int)aSrcSpriteIndexAndSrcRect.vSrcUVPixels.height);
+            //color
+            //BlackBocks.TintColorArray(arrSrcPixels, inTint[aSrcSpriteIndexAndSrcRect.iSrcSpriteIndex % inTint.Length]);
+            BlackBocks.TintColorArrayInsideMask(arrSrcPixels, inTint[aSrcSpriteIndexAndSrcRect.iSrcSpriteIndex % inTint.Length], arrMaskPixels);
+            //locate
+            RectInt rMainUVRect = new RectInt(aSrcSpriteIndexAndSrcRect.iSrcSpriteIndex * inRefSize.x, (int)inSpritePage * inRefSize.y, inRefSize.x, inRefSize.y);
+            //paste
+            //tHeroMapMainSpriteSheet.SetPixels(rMainUVRect.x, rMainUVRect.y, rMainUVRect.width, rMainUVRect.height, arrSrcPixels);
+            Color[] arrBasePixels = tHeroMapMainSpriteSheet.GetPixels(rMainUVRect.x, rMainUVRect.y, rMainUVRect.width, rMainUVRect.height);
+            BlackBocks.MergeColorArray(arrBasePixels, arrSrcPixels);
+            tHeroMapMainSpriteSheet.SetPixels(rMainUVRect.x, rMainUVRect.y, rMainUVRect.width, rMainUVRect.height, arrBasePixels);
+            tHeroMapMainSpriteSheet.Apply();
 
-        iCellXY = new Vector2Int[40];
-        iCellXY[0] = new Vector2Int(1, 1);
-        iCellXY[1] = new Vector2Int(1, 2);
-        iCellXY[2] = new Vector2Int(2, 2);
-        iCellXY[3] = new Vector2Int(2, 1);
-        iCellXY[4] = new Vector2Int(2, 0);
-        iCellXY[5] = new Vector2Int(1, 0);
-        iCellXY[6] = new Vector2Int(0, 0);
-        iCellXY[7] = new Vector2Int(0, 1);
-        iCellXY[8] = new Vector2Int(0, 2);
-
-        iCellXY[10] = new Vector2Int(3, 2);
-        iCellXY[11] = new Vector2Int(3, 0);
-        iCellXY[12] = new Vector2Int(3, 1);
-
-        iCellXY[20] = new Vector2Int(0, 3);
-        iCellXY[21] = new Vector2Int(1, 3);
-        iCellXY[22] = new Vector2Int(2, 3);
-        iCellXY[23] = new Vector2Int(3, 3);
-
-        iCellXY[24] = new Vector2Int(4, 0);
-        iCellXY[25] = new Vector2Int(4, 1);
-        iCellXY[26] = new Vector2Int(4, 2);
-        iCellXY[27] = new Vector2Int(4, 3);
-
-        iCellXY[30] = new Vector2Int(0, 4);
-        iCellXY[31] = new Vector2Int(1, 4);
-        iCellXY[32] = new Vector2Int(2, 4);
-        iCellXY[33] = new Vector2Int(3, 4);
-
-        iCellXY[34] = new Vector2Int(5, 0);
-        iCellXY[35] = new Vector2Int(5, 1);
-        iCellXY[36] = new Vector2Int(5, 2);
-        iCellXY[37] = new Vector2Int(5, 3);
+            //add to UV dictionary
+            dSpritePageAndIndexToMainUVRect[(inSpritePage, aSrcSpriteIndexAndSrcRect.iSrcSpriteIndex)] = new Rect((float)rMainUVRect.x / (float)tHeroMapMainSpriteSheet.width, (float)rMainUVRect.y / tHeroMapMainSpriteSheet.height, (float)rMainUVRect.width / tHeroMapMainSpriteSheet.width, (float)rMainUVRect.height / tHeroMapMainSpriteSheet.height);
+        }
     }
     // Start is called before the first frame update
     void Start()
@@ -141,12 +234,11 @@ public class HeroMapVisual : MonoBehaviour
     {
         this.arrGrid = inGrid;
 
-        inGrid.OnGridValueChanged += Grid_OnGridValueChanged;
+        inGrid.OnGridObjectChanged += Grid_OnGridObjectChanged;
     }
 
-    private void Grid_OnGridValueChanged(object sender, BlackBocksGrid<HeroTile>.OnGridValueChangedEventArgs e)
+    private void Grid_OnGridObjectChanged(object sender, BlackBocksGrid<HeroTile>.OnGridObjectChangedEventArgs e)
     {
-        //UpdateHeroMapVisuals();
         bUpdateMesh = true;
     }
 
@@ -157,12 +249,10 @@ public class HeroMapVisual : MonoBehaviour
             UpdateHeroMapVisuals();
             bUpdateMesh = false;
         }
-        arrGrid.bDebugEnabled = bDebugEnabled;
-
     }
     public void UpdateHeroMapVisuals()
     {
-        BlackBocks.CreateEmptyMeshArrays(arrGrid.GetWidth() * arrGrid.GetHeight()*5, out Vector3[] vVertices, out Vector2[] vUVs, out int[] iTriangles);
+        BlackBocks.CreateEmptyMeshArrays(arrGrid.GetWidth() * arrGrid.GetHeight()* iNumLayers, out Vector3[] vVertices, out Vector2[] vUVs, out int[] iTriangles);
         Vector3 vQuadSize = arrGrid.GetCellSize() * new Vector3(1, 1);
         Vector3 vWallSize = arrGrid.GetCellSize() * new Vector3((float)iWall/(float)iBaseTile, 1);
         Vector3 vNorthWall = arrGrid.GetCellSize() * new Vector3( 0.5f,  1.0f - (float)iWall / (float)iBaseTile/2); 
@@ -173,39 +263,46 @@ public class HeroMapVisual : MonoBehaviour
         {
             for (int y = 0; y < arrGrid.GetHeight(); y++)
             {
-                int i = x * arrGrid.GetHeight() *5 + y*5;
-                Debug.Log(i + ":" + x + "," + y);
-                Vector2 vUV00;
-                Vector2 vUV11;
-
-                //GetUVFromSpriteIndex(arrGrid.GetGridObject(x, y).GetSpriteIndex(), out vUV00, out vUV11);
-                //GetUVPositionFromIndexAndPage(arrGrid.GetGridObject(x, y).GetSpriteIndex(),0, out vUV00, out vUV11);
-
-                GetUVFromIndexAndPage(arrGrid.GetGridObject(x, y).GetBaseIndex(), 0, vBaseTileReference, out vUV00, out vUV11);
-                BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 0, arrGrid.GetWorldPosition(x, y) + vQuadSize * .5f, 0, vQuadSize, vUV00, vUV11);
-                if(arrGrid.GetGridObject(x, y).IsBlocked(eNavType.North))
+                int i = x * arrGrid.GetHeight() * iNumLayers + y* iNumLayers;
+                //Debug.Log(x + "," + y);
+                //add basetile
+                Rect rUV = dSpritePageAndIndexToMainUVRect[(eSpritePages.BaseTiles, arrGrid.GetGridObject(x, y).GetBaseIndex() % arrBaseTileSrcSpritePixelRect.Length)];
+                BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 0, arrGrid.GetWorldPosition(x, y) + vQuadSize * .5f, 0, vQuadSize, dSpritePageAndIndexToMainUVRect[(eSpritePages.BaseTiles, arrGrid.GetGridObject(x, y).GetBaseIndex() % arrBaseTileSrcSpritePixelRect.Length)]);
+                if (arrGrid.GetGridObject(x, y).GetNavTileIndex() != eNavTiles.None)
                 {
-                    GetUVFromIndexAndPage(arrGrid.GetGridObject(x, y).GetWallIndex(), 1, vWallTileReference, out vUV00, out vUV11);
-                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 1, arrGrid.GetWorldPosition(x, y) + vNorthWall, 90, vWallSize, vUV00, vUV11);
+                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 5, arrGrid.GetWorldPosition(x, y) + vQuadSize * .5f, arrGrid.GetGridObject(x,y).GetTileRotation(), vQuadSize*1f, dSpritePageAndIndexToMainUVRect[(eSpritePages.NavTiles, (int)arrGrid.GetGridObject(x, y).GetNavTileIndex() % arrNavTileSrcSpritePixelRect.Length)]);
                 }
 
+                if (arrGrid.GetGridObject(x, y).GetFurnitureIndex() != eFurniture.None)
+                {
+                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 5, arrGrid.GetWorldPosition(x, y) + vQuadSize * .5f, arrGrid.GetGridObject(x, y).GetTileRotation(), vQuadSize*1f, dSpritePageAndIndexToMainUVRect[(eSpritePages.FurnitureTiles, (int)arrGrid.GetGridObject(x, y).GetFurnitureIndex() % arrFurnitureTileSrcSpritePixelRect.Length)]);
+                }
+                //add North if north
+                if (arrGrid.GetGridObject(x, y).IsBlocked(eNavType.North))
+                {
+                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 1, arrGrid.GetWorldPosition(x, y) + vNorthWall, 90, vWallSize, dSpritePageAndIndexToMainUVRect[(eSpritePages.WallTiles, arrGrid.GetGridObject(x, y).GetWallIndex() % arrWallTileSrcSpritePixelRect.Length)]);
+                }
+
+                //add East if East
                 if (arrGrid.GetGridObject(x, y).IsBlocked(eNavType.East))
                 {
-                    GetUVFromIndexAndPage(arrGrid.GetGridObject(x, y).GetWallIndex(), 1, vWallTileReference, out vUV00, out vUV11);
-                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 2, arrGrid.GetWorldPosition(x, y) + vEastWall, 0, vWallSize, vUV00, vUV11);
+                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 2, arrGrid.GetWorldPosition(x, y) + vEastWall, 0, vWallSize, dSpritePageAndIndexToMainUVRect[(eSpritePages.WallTiles, arrGrid.GetGridObject(x, y).GetWallIndex() % arrWallTileSrcSpritePixelRect.Length)]);
                 }
 
+                //add South if South
                 if (arrGrid.GetGridObject(x, y).IsBlocked(eNavType.South))
                 {
-                    GetUVFromIndexAndPage(arrGrid.GetGridObject(x, y).GetWallIndex(), 1, vWallTileReference, out vUV00, out vUV11);
-                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 3, arrGrid.GetWorldPosition(x, y) + vSouthWall, 90, vWallSize, vUV00, vUV11);
+                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 3, arrGrid.GetWorldPosition(x, y) + vSouthWall, 90, vWallSize, dSpritePageAndIndexToMainUVRect[(eSpritePages.WallTiles, arrGrid.GetGridObject(x, y).GetWallIndex() % arrWallTileSrcSpritePixelRect.Length)]);
                 }
 
+                //add West if West
                 if (arrGrid.GetGridObject(x, y).IsBlocked(eNavType.West))
                 {
-                    GetUVFromIndexAndPage(arrGrid.GetGridObject(x, y).GetWallIndex(), 1, vWallTileReference, out vUV00, out vUV11);
-                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 4, arrGrid.GetWorldPosition(x, y) + vWestWall, 0, vWallSize, vUV00, vUV11);
+                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 4, arrGrid.GetWorldPosition(x, y) + vWestWall, 0, vWallSize, dSpritePageAndIndexToMainUVRect[(eSpritePages.WallTiles, arrGrid.GetGridObject(x, y).GetWallIndex() % arrWallTileSrcSpritePixelRect.Length)]);
                 }
+
+
+
             }
         }
 
@@ -248,26 +345,52 @@ public class HeroMapVisual : MonoBehaviour
         arrGrid.GetGridObject(v00.x, v11.y).SetNav(eNavType.NorthWest);
         arrGrid.GetGridObject(v11.x, v11.y).SetNav(eNavType.NorthEast);
         arrGrid.GetGridObject(v11.x, v00.y).SetNav(eNavType.SouthEast);
-
-
-
     }
 
 
-    public void GetUVFromIndexAndPage(
-        int inBaseIndex,
-        int inPage,
-        Vector2Int inRefShape,
-        out Vector2 vUV00,
-        out Vector2 vUV11)
+
+    public void Save()
     {
-        vUV00 = new Vector2(inRefShape.x * (inBaseIndex + 0), iPageOffset * inPage);
-        vUV11 = new Vector2(inRefShape.x * (inBaseIndex + 1), iPageOffset * inPage + inRefShape.y);
+        Debug.Log("Saving");
 
-        vUV00 /= tHeroMapMainSpriteSheet.width;
-        vUV11 /= tHeroMapMainSpriteSheet.width;
+        List<HeroTile.SaveObject> lTGridArrayList = new List<HeroTile.SaveObject>();
+
+        for (int x = 0; x < arrGrid.GetWidth(); x++)
+        {
+            for (int y = 0; y < arrGrid.GetHeight(); y++)
+            {
+                HeroTile aHeroTile = arrGrid.GetGridObject(x, y);
+                lTGridArrayList.Add(aHeroTile.GetSaveObject());
+            }
+        }
+
+        SaveGridToList oSaveObject = new SaveGridToList { TGridObjectArray = lTGridArrayList.ToArray() };
+
+        string strJSONSave = JsonUtility.ToJson(oSaveObject);
+        SaveSystem.Save(strJSONSave, "GridData/");
+        Debug.Log("Saved!");
+    }
+    
+    public class SaveGridToList
+    {
+        public HeroTile.SaveObject[] TGridObjectArray;
     }
 
+    public void Load()
+    {
+        SaveGridToList oSaveList = SaveSystem.LoadMostRecentObject<SaveGridToList>("GridData/");
+        if (oSaveList != null)
+        {
+            Debug.Log("Loading!");
+            foreach (HeroTile.SaveObject aSaveObject in oSaveList.TGridObjectArray)
+            { 
+                HeroTile aHeroTile = arrGrid.GetGridObject((int)aSaveObject.vPosition.x, (int)aSaveObject.vPosition.y);
+                aHeroTile.Load(aSaveObject);       
+            }
 
+            UpdateHeroMapVisuals();
+            Debug.Log("Loaded!");
+        }
+    }
 }
 

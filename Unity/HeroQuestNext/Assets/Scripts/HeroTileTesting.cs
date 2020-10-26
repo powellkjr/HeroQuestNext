@@ -14,6 +14,13 @@ public class HeroTileTesting : MonoBehaviour
     //[SerializeField] private int iHeight;
     private int iWidth = 26;
     private int iHeight = 19;
+    private enum ePenModeType
+    {
+        NavIndex,NavTiles,FurnitureTiles
+    }
+    private int iCurrentPen = 0;
+    private ePenModeType ePenMode;
+    private float fPenRotation = 0;
     //[SerializeField] private float iScale;
     //[SerializeField] private int iWidthOffset;
     //[SerializeField] private int iHeightOffset;
@@ -119,7 +126,7 @@ public class HeroTileTesting : MonoBehaviour
         arrGrid.GetGridObject(17, 6).SetNav(eNavType.SouthWest);
         arrGrid.GetGridObject(18, 5).SetNav(eNavType.SouthWest);
 
-        
+
         // hHeroMapVisual.UpdateHeroMapVisuals();
 
     }
@@ -127,8 +134,6 @@ public class HeroTileTesting : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        arrGrid.bDebugEnabled = bDebugEnabled;
-        hHeroMapVisual.bDebugEnabled = bDebugEnabled;
         Vector3 vPosition = BlackBocks.GetMouseWorldPosition();
         //hHeatMapVisual.bDebugEnabled = bDebugEnabled;
         if (Input.GetMouseButtonDown(0))
@@ -140,8 +145,25 @@ public class HeroTileTesting : MonoBehaviour
             HeroTile hHeroMapGridObject = arrGrid.GetGridObject(vPosition);
             if (hHeroMapGridObject != null)
             {
-                hHeroMapGridObject.IncrementSpriteIndex();
-
+                switch (ePenMode)
+                {
+                    case ePenModeType.NavIndex:
+                        //hHeroMapGridObject.IncrementSpriteIndex();
+                        hHeroMapGridObject.SetBaseIndex(iCurrentPen%= System.Enum.GetValues(typeof(eNavType)).Length);
+                        //iCurrentPen = hHeroMapGridObject.GetSpriteIndex();
+                        break;
+                    case ePenModeType.NavTiles:
+                        //hHeroMapGridObject.IncrementNavTileIndex();
+                        iCurrentPen %= System.Enum.GetValues(typeof(eNavTiles)).Length;
+                        hHeroMapGridObject.SetNavTileIndex((eNavTiles)iCurrentPen);
+                        hHeroMapGridObject.SetTileRotation(fPenRotation);
+                        break;
+                    case ePenModeType.FurnitureTiles:
+                        iCurrentPen %= System.Enum.GetValues(typeof(eFurniture)).Length;
+                        hHeroMapGridObject.SetFurintureIndex((eFurniture)iCurrentPen);
+                        hHeroMapGridObject.SetTileRotation(fPenRotation);
+                        break;
+                }
             }
         }
 
@@ -149,18 +171,89 @@ public class HeroTileTesting : MonoBehaviour
         {
             //Debug.Log("Value at: " + arrGrid.GetGridObject(BlackBocks.GetMouseWorldPosition()).GetSpriteIndex());
             Debug.Log("Value at: " + arrGrid.GetGridObject(vPosition).GetPosition() + " :" + arrGrid.GetGridObject(BlackBocks.GetMouseWorldPosition()).GetSpriteIndex());
+            ++iCurrentPen;
         }
 
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            ePenMode = ePenModeType.FurnitureTiles;
+            iCurrentPen = 0;
+            fPenRotation = 0;
+}
+
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            ePenMode = ePenModeType.NavTiles;
+            iCurrentPen = 0;
+            fPenRotation = 0;
+        }
+
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            ePenMode = ePenModeType.NavIndex;
+            iCurrentPen = 0;
+            fPenRotation = 0;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Keypad1))
+        {
+            fPenRotation = HeroTile.GetRotationFromNavType(eNavType.SouthWest);
+            Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Keypad2))
+        {
+            fPenRotation = HeroTile.GetRotationFromNavType(eNavType.South);
+            Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad3))
+        {
+            fPenRotation = HeroTile.GetRotationFromNavType(eNavType.SouthEast);Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
+            Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad4))
+        {
+            fPenRotation = HeroTile.GetRotationFromNavType(eNavType.West);
+            Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad5))
+        {
+            fPenRotation = HeroTile.GetRotationFromNavType(eNavType.Any);
+            Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad6))
+        {
+            fPenRotation = HeroTile.GetRotationFromNavType(eNavType.East);
+            Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad7))
+        {
+            fPenRotation = HeroTile.GetRotationFromNavType(eNavType.NorthWest);
+            Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad8))
+        {
+            fPenRotation = HeroTile.GetRotationFromNavType(eNavType.North);
+            Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
+        }
+        if (Input.GetKeyDown(KeyCode.Keypad9))
+        {
+            fPenRotation = HeroTile.GetRotationFromNavType(eNavType.NorthEast);
+            Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
+        }
+        
         if(Input.GetKeyDown(KeyCode.S))
         {
-            //Save();
+            hHeroMapVisual.Save();
         }
-
+        
         if(Input.GetKeyDown(KeyCode.L))
         {
-            //Load();
+            hHeroMapVisual.Load();
         }
-        //hHeatMapVisual.UpdateHeatMapVisuals();
+        
+        
+
     }
 
 

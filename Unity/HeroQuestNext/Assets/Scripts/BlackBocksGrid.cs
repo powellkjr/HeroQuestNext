@@ -8,25 +8,73 @@ using System.Xml.Serialization;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class BlackBocksGrid<TGridObject> 
+public class BlackBocksGrid<TGridObject>
 {
-    private int iWidth;
-    private int iHeight;
-    private TGridObject[,] arrGridArray;
-    //private TextMesh[,] arrDebugTextArray;
-    private float fCellSize;
-    private Vector3 vOrigin;
-    [SerializeField] public bool bDebugEnabled = true;
-
-    public const int HEAT_MAP_MAX_VAL = 100;
-    public const int HEAT_MAP_MIN_VAL = 0;
-
-    public class OnGridValueChangedEventArgs : EventArgs
+    public EventHandler<OnGridObjectChangedEventArgs> OnGridObjectChanged;
+    public class OnGridObjectChangedEventArgs : EventArgs
     {
         public int x;
         public int y;
     }
-    public EventHandler<OnGridValueChangedEventArgs> OnGridValueChanged;
+
+    private int iWidth;
+    private int iHeight;
+    private float fCellSize;
+    private Vector3 vOrigin;
+    private TGridObject[,] arrGridArray;
+    private bool bDebugEnabled = true;
+    private readonly Vector3 GRID_VERSION = new Vector3(0, 0, 0);
+
+    public BlackBocksGrid(
+        int inWidth,
+        int inHeight,
+        float inCellSize,
+        Vector3 inOrigin,
+        Func<BlackBocksGrid<TGridObject>, int, int, TGridObject> createDefaultObject)
+    {
+        this.iWidth = inWidth;
+        this.iHeight = inHeight;
+        this.fCellSize = inCellSize;
+        this.vOrigin = inOrigin;
+
+
+        arrGridArray = new TGridObject[iWidth, iHeight];
+        // arrDebugTextArray = new TextMesh[iWidth, iHeight];
+
+
+        for (int x = 0; x < arrGridArray.GetLength(0); x++)
+        {
+            for (int y = 0; y < arrGridArray.GetLength(1); y++)
+            {
+                arrGridArray[x, y] = createDefaultObject(this, x, y);
+            }
+        }
+
+        if (bDebugEnabled)
+        {
+            TextMesh[,] arrDebugTextArray = new TextMesh[iWidth, iHeight];
+
+            for (int x = 0; x < arrGridArray.GetLength(0); x++)
+            {
+                for (int y = 0; y < arrGridArray.GetLength(1); y++)
+                {
+                    arrDebugTextArray[x, y] = BlackBocks.CreateWorldText(arrGridArray[x, y]?.ToString(), null, GetWorldPosition(x, y) + new Vector3(fCellSize, fCellSize) * .5f, 20);
+                    Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x, y + 1), Color.white, 100);
+                    Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x + 1, y), Color.white, 100);
+                }
+            }
+
+            Debug.DrawLine(GetWorldPosition(0, iWidth), GetWorldPosition(iHeight, iWidth), Color.white, 100);
+            Debug.DrawLine(GetWorldPosition(iHeight, 0), GetWorldPosition(iHeight, iWidth), Color.white, 100);
+
+            OnGridObjectChanged += (object sender, OnGridObjectChangedEventArgs eventArgs) =>
+            {
+                arrDebugTextArray[eventArgs.x, eventArgs.y].text = arrGridArray[eventArgs.x, eventArgs.y]?.ToString();
+            };
+        }
+        SaveSystem.Initialize();
+    }
+
 
     public int GetWidth()
     {
@@ -43,59 +91,21 @@ public class BlackBocksGrid<TGridObject>
         return fCellSize;
     }
 
-
-    public BlackBocksGrid(
-        int inWidth,
-        int inHeight,
-        float inCellSize,
-        Vector3 inOrigin,
-        Func<BlackBocksGrid<TGridObject>,int, int,TGridObject> createDefaultObject)
+    public Vector3 GetGridVersion()
     {
-        int i = 0;
-        this.iWidth = inWidth;
-        this.iHeight = inHeight;
-        this.fCellSize = inCellSize;
-        this.vOrigin = inOrigin;
-
-        
-        arrGridArray = new TGridObject[iWidth, iHeight];
-       // arrDebugTextArray = new TextMesh[iWidth, iHeight];
-
-
-        for (int x = 0; x < arrGridArray.GetLength(0); x++)
-        {
-            for (int y = 0; y < arrGridArray.GetLength(1); y++)
-            {
-                arrGridArray[x, y] = createDefaultObject(this,x,y);
-            }
-        }
-
-        if (bDebugEnabled)
-        {
-            Debug.Log(iWidth + " , " + iHeight);
-
-            for (int x = 0; x < arrGridArray.GetLength(0); x++)
-            {
-                for (int y = 0; y < arrGridArray.GetLength(1); y++)
-                {
-                    Debug.Log("grid " + i + ", x=" + x + ", y=" + y);
-                    i++;
-                    //arrDebugTextArray[x, y] = BlackBocks.CreateWorldText(arrGridArray[x, y]?.ToString(), null, GetWorldPosition(x, y) + new Vector3(fCellSize, fCellSize) * .5f, 20);
-                    //arrDebugTextArray[x, y] = new TextMesh();
-                    //Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x, y + 1), Color.white, 100);
-                    //Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x + 1, y), Color.white, 100);
-                }
-            }
-
-            //Debug.DrawLine(GetWorldPosition(0, iWidth), GetWorldPosition(iHeight, iWidth), Color.white, 100);
-            //Debug.DrawLine(GetWorldPosition(iHeight, 0), GetWorldPosition(iHeight, iWidth), Color.white, 100);
-        }
-        //SetValue(2, 1, 56);
+        return GRID_VERSION;
     }
 
     public Vector3 GetWorldPosition(
         int inX,
         int inY)
+    {
+        return new Vector3(inX, inY) * fCellSize + vOrigin;
+    }
+
+    public Vector3 GetWorldPosition(
+    float inX,
+    float inY)
     {
         return new Vector3(inX, inY) * fCellSize + vOrigin;
     }
@@ -128,7 +138,7 @@ public class BlackBocksGrid<TGridObject>
             arrGridArray[inX, inY] = inValue;
             //arrGridArray[inX, inY] = Mathf.Clamp((float)inValue, HEAT_MAP_MIN_VAL, HEAT_MAP_MAX_VAL);
             //arrDebugTextArray[inX, inY].text = arrGridArray[inX, inY]?.ToString();
-            if (OnGridValueChanged != null) OnGridValueChanged(this, new OnGridValueChangedEventArgs { x = inX, y = inY });
+            if (OnGridObjectChanged != null) OnGridObjectChanged(this, new OnGridObjectChangedEventArgs { x = inX, y = inY });
         }
     }
 
@@ -141,14 +151,14 @@ public class BlackBocksGrid<TGridObject>
         int inY)
     {
         //arrDebugTextArray [inX, inY].text = arrGridArray [inX, inY]?.ToString();
-            if (OnGridValueChanged != null) OnGridValueChanged(this, new OnGridValueChangedEventArgs { x = inX, y = inY});
+        if (OnGridObjectChanged != null) OnGridObjectChanged(this, new OnGridObjectChangedEventArgs { x = inX, y = inY });
     }
 
     public TGridObject GetGridObject(
-        int inX, 
+        int inX,
         int inY)
     {
-        if (inX >= 0 && inY >= 0 && inX < iWidth && inY < iHeight)
+        if (IsValid(inX, inY))
         {
             return arrGridArray[inX, inY];
         }
@@ -156,6 +166,15 @@ public class BlackBocksGrid<TGridObject>
         {
             return default(TGridObject);
         }
+    }
+
+    public bool IsValid(Vector2Int inXY)
+    {
+        return IsValid(inXY.x, inXY.y);
+    }
+    public bool IsValid(int inX, int inY)
+    {
+        return (inX >= 0 && inY >= 0 && inX < iWidth && inY < iHeight);
     }
 
     public TGridObject GetGridObject(
@@ -168,16 +187,69 @@ public class BlackBocksGrid<TGridObject>
         Vector3 inWorldPosition)
     {
         Vector2Int vGridPosition = GetGridPostion(inWorldPosition);
-        if (vGridPosition.x >= 0 && vGridPosition.y >= 0 && vGridPosition.x < iWidth && vGridPosition.y < iHeight)
-        {
-            return GetGridObject(vGridPosition);
-        }
-        else
-        {
-            return default(TGridObject);
-        }
+        return GetGridObject(vGridPosition);
     }
 
-    
+    public List<TGridObject> GetEdgeList(int inX, int inY)
+    {
+        List<TGridObject> lReturn = new List<TGridObject>();
+        if (IsValid(inX + 1, inY + 0))
+        {
+            lReturn.Add(GetGridObject(inX + 1, inY + 0));
+        }
+        if (IsValid(inX + 0, inY + 1))
+        {
+            lReturn.Add(GetGridObject(inX + 0, inY + 1));
+        }
+        if (IsValid(inX - 1, inY + 0))
+        {
+            lReturn.Add(GetGridObject(inX - 1, inY + 0));
+        }
+        if (IsValid(inX + 0, inY - 1))
+        {
+            lReturn.Add(GetGridObject(inX + 0, inY - 1));
+        }
+
+        return lReturn;
+    }
+
+    public List<TGridObject> GetCornerList(int inX, int inY)
+    {
+        List<TGridObject> lReturn = new List<TGridObject>();
+        if (IsValid(inX + 1, inY + 1))
+        {
+            lReturn.Add(GetGridObject(inX + 1, inY + 1));
+        }
+        if (IsValid(inX + 1, inY - 1))
+        {
+            lReturn.Add(GetGridObject(inX + 1, inY - 1));
+        }
+        if (IsValid(inX - 1, inY + 1))
+        {
+            lReturn.Add(GetGridObject(inX - 1, inY + 1));
+        }
+        if (IsValid(inX - 1, inY - 1))
+        {
+            lReturn.Add(GetGridObject(inX - 1, inY - 1));
+        }
+
+        return lReturn;
+    }
+
+    public List<TGridObject> GetNeighborsList(int inX, int inY)
+    {
+        List<TGridObject> lReturn = new List<TGridObject>();
+        foreach (TGridObject aGridObject in GetEdgeList(inX, inY))
+        {
+            lReturn.Add(aGridObject);
+        }
+        foreach (TGridObject aGridObject in GetCornerList(inX, inY))
+        {
+            lReturn.Add(aGridObject);
+        }
+        return lReturn;
+    }
+
 
 }
+    
