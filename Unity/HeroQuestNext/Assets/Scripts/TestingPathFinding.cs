@@ -11,12 +11,15 @@ public class TestingPathFinding : MonoBehaviour
     private int iHeight = 19;
     private BlackBocksGrid<HeroTile> arrGrid;
     private Vector2Int vStartPos;
+    private List<HeroTile> lLastRange;
     // Start is called before the first frame update
     void Start()
     {
         arrGrid = new BlackBocksGrid<HeroTile>(iWidth, iHeight, 4, new Vector3(-51, -37), (BlackBocksGrid<HeroTile> g, int x, int y) => new HeroTile(g, x, y));
         new PathFinding<HeroTile>(arrGrid);
         vStartPos = new Vector2Int(0, 0);
+        lLastRange = PathFinding<HeroTile>.Instance.FindPathWithRange(vStartPos.x, vStartPos.y, 12);
+
     }
 
     // Update is called once per frame
@@ -146,6 +149,16 @@ public class TestingPathFinding : MonoBehaviour
             }
         }
 
+        if (lLastRange != null)
+        {
+            for (int i = 0; i < lLastRange.Count - 1; i++)
+            {
+                Debug.DrawLine(arrGrid.GetWorldPosition(lLastRange[i].x + .1f, lLastRange[i].y + .1f),
+                        arrGrid.GetWorldPosition(lLastRange[i].x + .9f, lLastRange[i].y + .9f),
+                        Color.blue);
+                
+            }
+        }
 
         if (lLastPath != null)
         {

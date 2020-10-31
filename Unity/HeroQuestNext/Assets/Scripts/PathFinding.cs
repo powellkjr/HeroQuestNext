@@ -24,6 +24,10 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
         return arrGrid;
     }
 
+    public List<TGridObject> FindPath(Vector2Int inStartPos,Vector2Int inEndPos)
+    {
+        return FindPath(inStartPos.x, inStartPos.y, inEndPos.x, inEndPos.y);
+    }
     public List<TGridObject> FindPath(int inStartX, int inStartY, int inEndX, int inEndY)
     {
         TGridObject pStartNode = arrGrid.GetGridObject(inStartX, inStartY);
@@ -84,10 +88,36 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
             }
         }
         return null;
+    }
 
+    public List<TGridObject> FindPathWithRange(Vector2Int inStartPos,  int inRange)
+    {
+        return FindPathWithRange(inStartPos.x, inStartPos.y, inRange);
+    }
+    public List<TGridObject> FindPathWithRange(int inStartX, int inStartY, int inRange)
+    {
+        int iRange = inRange + 1;
+        TGridObject pStartNode = arrGrid.GetGridObject(inStartX, inStartY);
+        List<TGridObject> lReturn = new List<TGridObject>();
+        for (int x = inStartX - iRange; x < inStartX + iRange; ++x)
+        {
+            for (int y = inStartY - iRange; y < inStartY + iRange; ++y)
+            {
+                if (arrGrid.IsValid(x, y))
+                {
+                    List<TGridObject> Test = FindPath(inStartX, inStartY, x, y);
+                    if(Test != null)
+                    {
+                        if (Test.Count <= iRange)
+                        {
+                            lReturn.Add(Test[Test.Count - 1]);
+                        }
+                    }
+                }
 
-
-
+            }
+        }
+        return lReturn;
     }
 
 

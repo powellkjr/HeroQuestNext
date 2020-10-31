@@ -12,6 +12,9 @@ public class HeroTileTesting : MonoBehaviour
     [SerializeField] private bool bDebugEnabled = true;
     //[SerializeField] private int iWidth;
     //[SerializeField] private int iHeight;
+    private List<HeroTile> lLastPath;
+    private List<HeroTile> lLastRange;
+    private Vector2Int vStartPos;
     private int iWidth = 26;
     private int iHeight = 19;
     private enum ePenModeType
@@ -32,6 +35,7 @@ public class HeroTileTesting : MonoBehaviour
         //hHeroMapVisual.SetGrid(arrGrid);
         //arrGrid = new Grid<HeatMapGridObject>(iWidth, iHeight, iScale, new Vector3(iWidthOffset, iHeightOffset), () => new HeatMapGridObject());
         arrGrid = new BlackBocksGrid<HeroTile>(iWidth, iHeight, 4, new Vector3(-51, -37), (BlackBocksGrid<HeroTile> g, int x, int y) => new HeroTile(g, x, y));
+        new PathFinding<HeroTile>(arrGrid);
         hHeroMapVisual.bDebugEnabled = bDebugEnabled;
         hHeroMapVisual.SetGrid(arrGrid);
 
@@ -127,6 +131,8 @@ public class HeroTileTesting : MonoBehaviour
         arrGrid.GetGridObject(18, 5).SetNav(eNavType.SouthWest);
 
 
+
+
         // hHeroMapVisual.UpdateHeroMapVisuals();
 
     }
@@ -134,6 +140,8 @@ public class HeroTileTesting : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
+        lLastRange = PathFinding<HeroTile>.Instance.FindPathWithRange(vStartPos.x, vStartPos.y, 12);
         Vector3 vPosition = BlackBocks.GetMouseWorldPosition();
         //hHeatMapVisual.bDebugEnabled = bDebugEnabled;
         if (Input.GetMouseButtonDown(0))
@@ -241,8 +249,13 @@ public class HeroTileTesting : MonoBehaviour
             fPenRotation = HeroTile.GetRotationFromNavType(eNavType.NorthEast);
             Debug.Log("Pen:" + iCurrentPen + " Rotation: " + fPenRotation);
         }
-        
-        if(Input.GetKeyDown(KeyCode.S))
+
+        if (Input.GetKeyDown(KeyCode.KeypadMultiply))
+        {
+            arrGrid.GetGridObject(vPosition).eNav = eNavType.All;
+        }
+
+        if (Input.GetKeyDown(KeyCode.S))
         {
             hHeroMapVisual.Save();
         }
@@ -251,8 +264,54 @@ public class HeroTileTesting : MonoBehaviour
         {
             hHeroMapVisual.Load();
         }
-        
-        
+
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            //Vector3 vMouseWorldPosition = BlackBocks.GetMouseWorldPosition();
+            Vector2Int vEndPos = PathFinding<HeroTile>.Instance.GetGrid().GetGridPostion(vPosition);
+            //List<PathNode> lPath = pPathFinding.FindPath(0, 0, vEndPos.x, vEndPos.y);
+            lLastPath = new List<HeroTile>();
+            //lLastPath = pPathFinding.FindPath(0, 0, vEndPos.x, vEndPos.y);
+            if (arrGrid.IsValid(vEndPos))
+            {
+                lLastPath = PathFinding<HeroTile>.Instance.FindPath(vStartPos.x, vStartPos.y, vEndPos.x, vEndPos.y);
+                arrGrid.TriggerGridObjectChanged(vEndPos);
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.KeypadPeriod))
+        {
+            //Vector3 vMouseWorldPosition = BlackBocks.GetMouseWorldPosition();
+            Vector2Int vNewPos = PathFinding<HeroTile>.Instance.GetGrid().GetGridPostion(vPosition);
+            if (arrGrid.IsValid(vNewPos))
+            {
+                vStartPos = vNewPos;
+            }
+        }
+
+
+        if (lLastPath != null)
+        {
+            for (int i = 0; i < lLastPath.Count - 1; i++)
+            {
+                Debug.DrawLine(arrGrid.GetWorldPosition(lLastPath[i + 0].x + .5f, lLastPath[i + 0].y + .5f),
+                        arrGrid.GetWorldPosition(lLastPath[i + 1].x + .5f, lLastPath[i + 1].y + .5f),
+                        Color.green);
+
+            }
+        }
+
+        //if (lLastRange != null)
+        //{
+        //    for (int i = 0; i < lLastRange.Count; i++)
+        //    {
+        //        Debug.DrawLine(arrGrid.GetWorldPosition(lLastRange[i].x + .1f, lLastRange[i].y + .1f),
+        //                arrGrid.GetWorldPosition(lLastRange[i].x + .9f, lLastRange[i].y + .9f),
+        //                Color.blue);
+
+        //    }
+        //}
+
 
     }
 

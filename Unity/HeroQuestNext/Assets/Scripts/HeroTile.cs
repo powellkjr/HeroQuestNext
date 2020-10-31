@@ -50,9 +50,24 @@ public enum eMonsters
     ChaosWarrior,
     Gargoyle,
     ChaosScorcer,
-
 }
 
+public enum ePlayers
+{
+    None,
+    Barbarian,
+    Dwarf,
+    Elf,
+    Wizard,
+}
+
+public enum eVisualIcons
+{
+    None,
+    MoveSelector,
+    ActSelector,
+
+}
 public enum eNavTiles
 {
     None,
@@ -154,6 +169,15 @@ public enum eRoomIDs
 
     Block05Rm1
 }
+
+public enum eMoveableType
+{
+    None,
+    Furniture,
+    Player,
+    Enemy
+}
+
 
 
 
@@ -258,6 +282,7 @@ public class HeroTile : IPathable<HeroTile>
     private float fTileRotation;
     private float fTileScale;
     public BlackBocksGrid<HeroTile> gHostGrid;
+    (eMoveableType, int) sMoveable;
 
     //public Vector2 GetPosition() { return vPosition; }
     public int GetSpriteIndex() { return iSpriteIndex; }
@@ -376,6 +401,17 @@ public class HeroTile : IPathable<HeroTile>
         this.eFurnitureIndex = inFuritureTileIndex;
         
     }
+
+    public bool HasEntered((eMoveableType, int) inMoveableKey)
+    {
+        if(sMoveable.Item1 == eMoveableType.None)
+        {
+            sMoveable = inMoveableKey;
+            return true;
+        }
+        return false;
+    }
+
 
     public override string ToString()
     {

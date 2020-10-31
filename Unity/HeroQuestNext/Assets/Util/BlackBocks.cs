@@ -2,6 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
+[System.Serializable]
+struct sSrcSpriteIndexAndSrcRect
+{
+    public int iSrcSpriteIndex;
+    public Rect vSrcUVPixels;
+}
 public class BlackBocks 
 {
     public static readonly Vector2Int vNorth =     new Vector2Int( 0,  1);
@@ -12,6 +19,8 @@ public class BlackBocks
     public static readonly Vector2Int vSouthWest = new Vector2Int(-1, -1);
     public static readonly Vector2Int vWest =      new Vector2Int(-1,  0);
     public static readonly Vector2Int vNorthWest = new Vector2Int(-1,  1);
+
+
 
     public static TextMesh CreateWorldText(
         string text = "Text",
