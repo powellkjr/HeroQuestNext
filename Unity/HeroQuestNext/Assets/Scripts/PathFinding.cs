@@ -24,12 +24,17 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
         return arrGrid;
     }
 
-    public List<TGridObject> FindPath(Vector2Int inStartPos,Vector2Int inEndPos)
+    public List<TGridObject> FindPath(Vector2Int inStartPos,Vector2Int inEndPos, eMoveableType inMoveable)
     {
-        return FindPath(inStartPos.x, inStartPos.y, inEndPos.x, inEndPos.y);
+        return FindPath(inStartPos.x, inStartPos.y, inEndPos.x, inEndPos.y, inMoveable);
     }
-    public List<TGridObject> FindPath(int inStartX, int inStartY, int inEndX, int inEndY)
+    public List<TGridObject> FindPath(int inStartX, int inStartY, int inEndX, int inEndY, eMoveableType inMoveable)
     {
+        if(!arrGrid.IsValid(inStartX,inStartY) || !arrGrid.IsValid(inEndX, inEndY))
+        {
+            return null;
+        }
+
         TGridObject pStartNode = arrGrid.GetGridObject(inStartX, inStartY);
         TGridObject pEndNode = arrGrid.GetGridObject(inEndX, inEndY);
 
@@ -66,7 +71,7 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
             }
 
             //foreach (PathNode aPathNode in arrGrid.GetNeighborsList(pCurrentNode.x, pCurrentNode.y))
-            foreach (TGridObject aPathNode in GetNavNeighborsList(pCurrentNode.x, pCurrentNode.y))
+            foreach (TGridObject aPathNode in GetNavNeighborsList(pCurrentNode.x, pCurrentNode.y, inMoveable))
             {
                 if (lClosedList.Contains(aPathNode))
                 {
@@ -90,14 +95,17 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
         return null;
     }
 
-    public List<TGridObject> FindPathWithRange(Vector2Int inStartPos,  int inRange)
+    public List<TGridObject> FindPathWithRange(Vector2Int inStartPos,  int inRange, eMoveableType inMoveable = eMoveableType.None)
     {
-        return FindPathWithRange(inStartPos.x, inStartPos.y, inRange);
+        return FindPathWithRange(inStartPos.x, inStartPos.y, inRange, inMoveable);
     }
-    public List<TGridObject> FindPathWithRange(int inStartX, int inStartY, int inRange)
+    public List<TGridObject> FindPathWithRange(int inStartX, int inStartY, int inRange,eMoveableType inMoveable=eMoveableType.None)
     {
+        if(!arrGrid.IsValid(inStartX, inStartY))
+        {
+            return null;
+        }
         int iRange = inRange + 1;
-        TGridObject pStartNode = arrGrid.GetGridObject(inStartX, inStartY);
         List<TGridObject> lReturn = new List<TGridObject>();
         for (int x = inStartX - iRange; x < inStartX + iRange; ++x)
         {
@@ -105,21 +113,50 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
             {
                 if (arrGrid.IsValid(x, y))
                 {
-                    List<TGridObject> Test = FindPath(inStartX, inStartY, x, y);
-                    if(Test != null)
+                    if (arrGrid.GetGridObject(x, y).GetMoveable().Count == 0)
                     {
-                        if (Test.Count <= iRange)
+                        List<TGridObject> Test = FindPath(inStartX, inStartY, x, y, inMoveable);
+                        if (Test != null)
                         {
-                            lReturn.Add(Test[Test.Count - 1]);
+                            if (Test.Count <= iRange)
+                            {
+                                lReturn.Add(Test[Test.Count - 1]);
+                            }
                         }
                     }
                 }
-
             }
         }
         return lReturn;
     }
 
+    public List<TGridObject> FindTileInRange(Vector2Int inStartPos, int inRange)
+    {
+        return FindTileInRange(inStartPos.x, inStartPos.y, inRange);
+    }
+    public List<TGridObject> FindTileInRange(int inStartX, int inStartY, int inRange)
+    {
+        if (!arrGrid.IsValid(inStartX, inStartY))
+        {
+            return null;
+        }
+        int iRange = inRange + 1;
+        List<TGridObject> lReturn = new List<TGridObject>();
+        for (int x = inStartX - iRange; x < inStartX + iRange; ++x)
+        {
+            for (int y = inStartY - iRange; y < inStartY + iRange; ++y)
+            {
+                if (arrGrid.IsValid(x, y))
+                {
+                   if(Vector2.Distance(new Vector2Int(inStartX,inStartY),new Vector2Int(x,y)) <iRange)
+                    {
+                        lReturn.Add(arrGrid.GetGridObject(x, y));
+                    }
+                }
+            }
+        }
+        return lReturn;
+    }
 
     private List<TGridObject> CalculatePath(TGridObject inEndNode)
     {
@@ -158,7 +195,7 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
         return pLowestFCostNode;
     }
 
-    public List<TGridObject> GetNavNeighborsList(int inX, int inY)
+    public List<TGridObject> GetNavNeighborsList(int inX, int inY, eMoveableType inMoveable = eMoveableType.None)
     {
         List<TGridObject> lReturn = new List<TGridObject>();
         Vector2Int vHome = new Vector2Int(inX, inY);
@@ -168,7 +205,7 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
         {
             if (arrGrid.IsValid(vHome + HeroTile.vNavType[i]))
             {
-                if (IsClear(pHome,(eNavType)i))
+                if (IsClear(pHome,(eNavType)i,inMoveable))
                 {
                     lReturn.Add(arrGrid.GetGridObject(vHome + HeroTile.vNavType[i]));
                 }
@@ -182,55 +219,55 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
 
     }
 
-    private bool IsClear(TGridObject pHome, eNavType eNavDir)
+    private bool IsClear(TGridObject pHome, eNavType eNavDir, eMoveableType inMoveable = eMoveableType.None)
     {
         TGridObject pReturn = arrGrid.GetGridObject(pHome.x + (HeroTile.vNavType[(int)eNavDir]).x, pHome.y + (HeroTile.vNavType[(int)eNavDir].y));
         switch(eNavDir)
         {
             case eNavType.North:
-                if(!pReturn.IsBlocked(eNavType.South) && !pHome.IsBlocked(eNavType.North))
+                if(!pReturn.IsBlocked(eNavType.South, inMoveable) && !pHome.IsBlocked(eNavType.North, inMoveable))
                 {
                     return true;
                 }
                 break;
             case eNavType.NorthEast:
-                if (!pReturn.IsBlocked(eNavType.SouthWest) && !pHome.IsBlocked(eNavType.NorthEast))
+                if (!pReturn.IsBlocked(eNavType.SouthWest, inMoveable) && !pHome.IsBlocked(eNavType.NorthEast, inMoveable))
                 {
                     return true;
                 }
                 break;            
             case eNavType.East:
-                if (!pReturn.IsBlocked(eNavType.West) && !pHome.IsBlocked(eNavType.East))
+                if (!pReturn.IsBlocked(eNavType.West, inMoveable) && !pHome.IsBlocked(eNavType.East, inMoveable))
                 {
                     return true;
                 }
                 break;
             case eNavType.SouthEast:
-                if (!pReturn.IsBlocked(eNavType.NorthWest) && !pHome.IsBlocked(eNavType.SouthEast))
+                if (!pReturn.IsBlocked(eNavType.NorthWest, inMoveable) && !pHome.IsBlocked(eNavType.SouthEast, inMoveable))
                 {
                     return true;
                 }
                 break;
             case eNavType.South:
-                if (!pReturn.IsBlocked(eNavType.North) && !pHome.IsBlocked(eNavType.South))
+                if (!pReturn.IsBlocked(eNavType.North, inMoveable) && !pHome.IsBlocked(eNavType.South, inMoveable))
                 {
                     return true;
                 }
                 break;
             case eNavType.SouthWest:
-                if (!pReturn.IsBlocked(eNavType.NorthEast) && !pHome.IsBlocked(eNavType.SouthWest))
+                if (!pReturn.IsBlocked(eNavType.NorthEast, inMoveable) && !pHome.IsBlocked(eNavType.SouthWest, inMoveable))
                 {
                     return true;
                 }
                 break;
             case eNavType.West:
-                if (!pReturn.IsBlocked(eNavType.East) && !pHome.IsBlocked(eNavType.West))
+                if (!pReturn.IsBlocked(eNavType.East, inMoveable) && !pHome.IsBlocked(eNavType.West, inMoveable))
                 {
                     return true;
                 }
                 break;
             case eNavType.NorthWest:
-                if (!pReturn.IsBlocked(eNavType.SouthEast) && !pHome.IsBlocked(eNavType.NorthWest))
+                if (!pReturn.IsBlocked(eNavType.SouthEast, inMoveable) && !pHome.IsBlocked(eNavType.NorthWest, inMoveable))
                 {
                     return true;
                 }

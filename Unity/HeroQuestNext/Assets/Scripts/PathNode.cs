@@ -22,8 +22,15 @@ public class PathNode : IPathable<PathNode>
     public void GetPosition(out Vector2 outPos) { outPos = new Vector2(x, y); }
     public void GetPosition(out Vector3 outPos) { outPos = new Vector3(x, y); }
     public void GetPosition(out int outX, out int outY) { outX = x; outY = y; }
-   
-    public bool IsBlocked(eNavType inNavType)
+    private List<(eMoveableType,int)> lMoveable;
+
+
+    public List<(eMoveableType, int)> GetMoveable()
+    {
+        return lMoveable;
+    }
+
+    public bool IsBlocked(eNavType inNavType, eMoveableType inMoveable = eMoveableType.None)
     {
             switch (inNavType)
         {

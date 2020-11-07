@@ -18,7 +18,7 @@ public class TestingPathFinding : MonoBehaviour
         arrGrid = new BlackBocksGrid<HeroTile>(iWidth, iHeight, 4, new Vector3(-51, -37), (BlackBocksGrid<HeroTile> g, int x, int y) => new HeroTile(g, x, y));
         new PathFinding<HeroTile>(arrGrid);
         vStartPos = new Vector2Int(0, 0);
-        lLastRange = PathFinding<HeroTile>.Instance.FindPathWithRange(vStartPos.x, vStartPos.y, 12);
+        lLastRange = PathFinding<HeroTile>.Instance.FindPathWithRange(vStartPos.x, vStartPos.y, 12,eMoveableType.None);
 
     }
 
@@ -36,7 +36,7 @@ public class TestingPathFinding : MonoBehaviour
             //lLastPath = pPathFinding.FindPath(0, 0, vEndPos.x, vEndPos.y);
             if (arrGrid.IsValid(vEndPos))
             {
-                lLastPath = PathFinding<HeroTile>.Instance.FindPath(vStartPos.x, vStartPos.y, vEndPos.x, vEndPos.y);
+                lLastPath = PathFinding<HeroTile>.Instance.FindPath(vStartPos.x, vStartPos.y, vEndPos.x, vEndPos.y,eMoveableType.None);
                 arrGrid.TriggerGridObjectChanged(vEndPos);
             }
            

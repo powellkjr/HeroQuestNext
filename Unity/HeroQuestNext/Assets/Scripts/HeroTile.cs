@@ -64,8 +64,8 @@ public enum ePlayers
 public enum eVisualIcons
 {
     None,
-    MoveSelector,
-    ActSelector,
+    OutlineSelector,
+    CornerSelector,
 
 }
 public enum eNavTiles
@@ -179,8 +179,6 @@ public enum eMoveableType
 }
 
 
-
-
 public class HeroTile : IPathable<HeroTile>
 {
 
@@ -233,12 +231,27 @@ public class HeroTile : IPathable<HeroTile>
     public void GetPosition(out Vector3 outPos) { outPos = new Vector3(x, y); }
     public void GetPosition(out int outX, out int outY) { outX = x; outY = y; }
 
-    public bool IsBlocked(eNavType inNavType)
+    
+    public bool IsBlocked(eNavType inNavType, eMoveableType inMoveable = eMoveableType.None)
     {
-        if(eNav == eNavType.All)
+        //if the tile is solid
+        if (eNav == eNavType.All)
         {
             return true;
-        }    
+        }
+
+        //if it is currently occupied
+        if(lMoveable.Count > 0)
+        {
+        //if the tile is not friendly
+             if(lMoveable[0].Item1 != inMoveable)
+            {
+                return true;
+            }
+        }
+
+        
+
         switch (inNavType)
         {
             case eNavType.North:
@@ -277,16 +290,32 @@ public class HeroTile : IPathable<HeroTile>
     private int iSpriteIndex;
     private int iBaseIndex;
     private int iWallIndex;
+    private eRoomIDs eRoomID;
+
     private eNavTiles eNavTileIndex;
     private eFurniture eFurnitureIndex;
     private float fTileRotation;
     private float fTileScale;
     public BlackBocksGrid<HeroTile> gHostGrid;
-    (eMoveableType, int) sMoveable;
+    private List<(eMoveableType,int)> lMoveable;
+
+    public List<(eMoveableType, int)> GetMoveable()
+    {
+        return lMoveable;
+    }
+
+    public void SetMoveable((eMoveableType, int) inMoveable)
+    {
+        lMoveable.Clear();
+        lMoveable.Add(inMoveable);
+    }
+
 
     //public Vector2 GetPosition() { return vPosition; }
     public int GetSpriteIndex() { return iSpriteIndex; }
 
+    public eRoomIDs GetRoomID() { return eRoomID; }
+    public void SetRoomID(eRoomIDs inRoomID) { eRoomID = inRoomID; }
     public int GetBaseIndex() { return iBaseIndex; }
     public int GetWallIndex() { return iWallIndex; }
 
@@ -399,35 +428,81 @@ public class HeroTile : IPathable<HeroTile>
         this.fTileScale = inTileScale;
         this.eNavTileIndex = inNavTileIndex;
         this.eFurnitureIndex = inFuritureTileIndex;
+        this.lMoveable = new List<(eMoveableType, int)>();
         
     }
 
-    public bool HasEntered((eMoveableType, int) inMoveableKey)
+    public bool HasEntered((eMoveableType,int) inMoveable)
     {
-        if(sMoveable.Item1 == eMoveableType.None)
+        if (lMoveable.Count > 0)
         {
-            sMoveable = inMoveableKey;
+            if (lMoveable[0].Item1 == inMoveable.Item1)
+            {
+                //tile is occupied you can share
+                lMoveable.Add(inMoveable);
+                gHostGrid.TriggerGridObjectChanged(GetPosition());
+                return true;
+            }
+        }
+        else
+        {
+            //tile was empty, now is yours
+            lMoveable.Add(inMoveable);
+            gHostGrid.TriggerGridObjectChanged(GetPosition());
             return true;
         }
+        //tile is not empty or you are not welcome;
+        return false;
+    }
+
+    public bool HasLeft((eMoveableType,int) inMoveable)
+    {
+        if(lMoveable.Contains(inMoveable))
+        {
+            //if you are here you can leave
+            lMoveable.Remove(inMoveable);
+            gHostGrid.TriggerGridObjectChanged(GetPosition());
+            return true;
+        }
+        //tile does not think you are here, leaving would be hard
         return false;
     }
 
 
     public override string ToString()
     {
+        string strReturn = "";
         //return iSpriteIndex.ToString();
-        return "";
+        //if (lMoveable.Count > 0)
+        //{
+        //    strReturn = "xy" + x + "," + y + ",";
+        //    foreach ((eMoveableType, int) aMoveable in lMoveable)
+        //    {
+        //        strReturn += "\n" +aMoveable.Item1;
+        //    }
+        //}
+        return strReturn;
     }
 
     
     public SaveObject GetSaveObject()
     {
+        eMoveableType aMoveableItem1 = eMoveableType.None;
+        int aMoveableItem2 = 0;
+        if(lMoveable.Count !=0)
+        {
+            aMoveableItem1 = lMoveable[0].Item1;
+            aMoveableItem2 = lMoveable[0].Item2;
+        }
         return new SaveObject
         {
             vPosition = GetPosition(),
             //gHostGrid = inHostGrid;
-            
+
             iSpriteIndex = iSpriteIndex,
+            eRoomID = eRoomID,
+            eMoveableItem1 = aMoveableItem1,
+            eMoveableItem2 = aMoveableItem2,
             eNav = eNav,
             iBaseIndex = iBaseIndex,
             iWallIndex = iWallIndex,
@@ -443,12 +518,15 @@ public class HeroTile : IPathable<HeroTile>
     public class SaveObject
     {
         public Vector2Int vPosition;
+        public eRoomIDs eRoomID;
         public int iSpriteIndex;
         public int iBaseIndex;
         public int iWallIndex;
         public eNavTiles eNavTileIndex;
         public eFurniture eFurnitureIndex;
         public eNavType eNav;
+        public eMoveableType eMoveableItem1;
+        public int eMoveableItem2;
         public float fTileRotation;
         public float fTileScale;
     }
@@ -459,6 +537,7 @@ public class HeroTile : IPathable<HeroTile>
         y = iSaveObject.vPosition.y;
         //gHostGrid = inHostGrid
         iSpriteIndex = iSaveObject.iSpriteIndex;
+        eRoomID = iSaveObject.eRoomID;
         eNav = iSaveObject.eNav;
         iBaseIndex = iSaveObject.iBaseIndex;
         iWallIndex = iSaveObject.iWallIndex;
@@ -466,5 +545,11 @@ public class HeroTile : IPathable<HeroTile>
         fTileScale = iSaveObject.fTileScale;
         eNavTileIndex = iSaveObject.eNavTileIndex;
         eFurnitureIndex = iSaveObject.eFurnitureIndex;
-    }
+        lMoveable.Clear();
+        if(iSaveObject.eMoveableItem1!= eMoveableType.None)
+        {
+            lMoveable.Add((iSaveObject.eMoveableItem1, iSaveObject.eMoveableItem2));
+        }
+                
+}
 }

@@ -59,6 +59,7 @@ public class BlackBocksGrid<TGridObject>
                 for (int y = 0; y < arrGridArray.GetLength(1); y++)
                 {
                     arrDebugTextArray[x, y] = BlackBocks.CreateWorldText(arrGridArray[x, y]?.ToString(), null, GetWorldPosition(x, y) + new Vector3(fCellSize, fCellSize) * .5f, 20);
+                    //arrDebugTextArray[x, y] = BlackBocks.CreateWorldText(arrGridArray[x, y]?.ToString(), null, GetWorldPosition(-1,-1), 20);
                     Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x, y + 1), Color.white, 10);
                     Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x + 1, y), Color.white, 10);
                 }

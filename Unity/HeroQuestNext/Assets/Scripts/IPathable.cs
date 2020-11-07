@@ -15,7 +15,8 @@ public interface IPathable<TGridObject>
     Vector2Int GetPosition();
 
     void CalculateFCost();
-    bool IsBlocked(eNavType inNavType);
+    bool IsBlocked(eNavType inNavType, eMoveableType inMoveable);
+    List<(eMoveableType,int)> GetMoveable();
     void InitPathable(int x, int y);
 
  }

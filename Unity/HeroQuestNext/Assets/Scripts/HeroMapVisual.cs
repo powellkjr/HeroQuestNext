@@ -5,6 +5,19 @@ using System.Xml.Serialization;
 using UnityEngine;
 using UnityEditor;
 
+
+public enum eSpritePages
+{
+    None,
+    BaseTiles,
+    WallTiles,
+    NavTiles,
+    FurnitureTiles,
+    PlayerTiles,
+    EnemyTiles,
+    MoveTiles,
+    ActTiles,
+}
 public class HeroMapVisual : MonoBehaviour
 {
     private BlackBocksGrid<HeroTile> arrGrid;
@@ -53,7 +66,8 @@ public class HeroMapVisual : MonoBehaviour
     private sSrcSpriteIndexAndSrcRect[] arrFurnitureTileSrcSpritePixelRect = new sSrcSpriteIndexAndSrcRect[iNumFurnitureTiles];
     private sSrcSpriteIndexAndSrcRect[] arrPlayerIconsSrcSpritePixelRect = new sSrcSpriteIndexAndSrcRect[iNumPlayerIcons];
     private sSrcSpriteIndexAndSrcRect[] arrEnemyIconsSrcSpritePixelRect = new sSrcSpriteIndexAndSrcRect[iNumEnemyIcons];
-    private sSrcSpriteIndexAndSrcRect[] arrVisualIconsSrcSpritePixelRect = new sSrcSpriteIndexAndSrcRect[iNumVisualIcons];
+    private sSrcSpriteIndexAndSrcRect[] arrMoveIconsSrcSpritePixelRect = new sSrcSpriteIndexAndSrcRect[iNumVisualIcons];
+    private sSrcSpriteIndexAndSrcRect[] arrActIconsSrcSpritePixelRect = new sSrcSpriteIndexAndSrcRect[iNumVisualIcons];
     
 
 
@@ -66,7 +80,7 @@ public class HeroMapVisual : MonoBehaviour
     private static int iNumEnemyIcons = System.Enum.GetValues(typeof(eMonsters)).Length;
     private static int iNumVisualIcons = System.Enum.GetValues(typeof(eVisualIcons)).Length;
 
-    private int iNumLayers = 7;
+    private int iNumLayers = 8;
     //int[] iPageStartsAt= new int[iNumPages];
     
     private const int iWall = 15;
@@ -78,24 +92,13 @@ public class HeroMapVisual : MonoBehaviour
     private Dictionary<(eSpritePages, int), Rect> dSpritePageAndIndexToMainUVRect = new Dictionary<(eSpritePages, int), Rect>();
     
 
-    private enum eSpritePages
-    {
-        BaseTiles,
-        WallTiles,
-        NavTiles,
-        FurnitureTiles,
-        PlayerTiles,
-        EnemyTiles,
-        VisualTiles,
-    }
+
 
     private void Awake()
     {
         Instance = this;
         mMesh = new Mesh { };
         GetComponent<MeshFilter>().mesh = mMesh;
-     
-        //tHeroBasePixels = GetComponent<Texture2D>();
 
 
         tHeroMapMainSpriteSheet = new Texture2D(iNumFurnitureTiles * vBaseTileReference.x, iBaseTile * iNumPages, TextureFormat.RGBA32, true);
@@ -117,7 +120,8 @@ public class HeroMapVisual : MonoBehaviour
         Color[] arrFurnitureTileColors = new Color[] { new Color(1, 1, 1, 0) };
         Color[] arrPlayerColors = new Color[] { new Color(1, 1, 1, 0) };
         Color[] arrEnemyColors = new Color[] { new Color(1, 1, 1, 0) };
-        Color[] arrVisualColors = new Color[] { new Color(1, 1, 1, 0), new Color(0, 0, 1, 0), new Color(1, 0, 0, 0)};
+        Color[] arrMoveColors = new Color[] { new Color(1, 1, 1, 0), new Color(0, 0, 1, 0), new Color(0, 0, 1, 0) };
+        Color[] arrActColors = new Color[] { new Color(1, 1, 1, 0), new Color(1, 0, 0, 0), new Color(1, 0, 0, 0) };
 
         for (int i = 0; i < iNumRooms; i++)
         {
@@ -160,7 +164,7 @@ public class HeroMapVisual : MonoBehaviour
             }
         }
 
-         sTilePath = AssetDatabase.GetAssetPath(tPlayerIcons);
+        sTilePath = AssetDatabase.GetAssetPath(tPlayerIcons);
         sprites = AssetDatabase.LoadAllAssetsAtPath(sTilePath);
 
         foreach (Object aObject in sprites)
@@ -184,8 +188,11 @@ public class HeroMapVisual : MonoBehaviour
                             arrEnemyIconsSrcSpritePixelRect[i].iSrcSpriteIndex = i;
                             break;
                         case "VisualTiles":
-                            arrVisualIconsSrcSpritePixelRect[i].vSrcUVPixels = aSprite.rect;
-                            arrVisualIconsSrcSpritePixelRect[i].iSrcSpriteIndex = i;
+                            arrMoveIconsSrcSpritePixelRect[i].vSrcUVPixels = aSprite.rect;
+                            arrMoveIconsSrcSpritePixelRect[i].iSrcSpriteIndex = i;
+
+                            arrActIconsSrcSpritePixelRect[i].vSrcUVPixels = aSprite.rect;
+                            arrActIconsSrcSpritePixelRect[i].iSrcSpriteIndex = i;
                             break;
                     }
                 }
@@ -198,13 +205,17 @@ public class HeroMapVisual : MonoBehaviour
         AddNewTilesToSpritePageAndIndexToMainUVRect(tPlayerIcons, tPlayerIconsMask, arrPlayerIconsSrcSpritePixelRect, vBaseTileReference, eSpritePages.PlayerTiles, arrPlayerColors);
         mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
 
-        AddNewTilesToSpritePageAndIndexToMainUVRect(tPlayerIcons, tPlayerIconsMask, arrVisualIconsSrcSpritePixelRect, vBaseTileReference, eSpritePages.VisualTiles, arrVisualColors);
+        AddNewTilesToSpritePageAndIndexToMainUVRect(tPlayerIcons, tPlayerIconsMask, arrMoveIconsSrcSpritePixelRect, vBaseTileReference, eSpritePages.MoveTiles, arrMoveColors);
+        mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
+
+        AddNewTilesToSpritePageAndIndexToMainUVRect(tPlayerIcons, tPlayerIconsMask, arrActIconsSrcSpritePixelRect, vBaseTileReference, eSpritePages.ActTiles, arrActColors);
         mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
 
         AddNewTilesToSpritePageAndIndexToMainUVRect(tHeroBaseTiles, tHeroBaseTiles, arrBaseTileSrcSpritePixelRect, vBaseTileReference, eSpritePages.BaseTiles, arrBaseTileColors);
         mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
 
-        AddNewTilesToSpritePageAndIndexToMainUVRect(tHeroWallTiles, tHeroWallTiles, arrWallTileSrcSpritePixelRect, vWallTileReference, eSpritePages.WallTiles, arrWallTileColors);
+        //AddNewTilesToSpritePageAndIndexToMainUVRect(tHeroWallTiles, tHeroWallTiles, arrWallTileSrcSpritePixelRect, vWallTileReference, eSpritePages.WallTiles, arrWallTileColors);
+        AddNewTilesToSpritePageAndIndexToMainUVRect(tHeroWallTiles, tHeroWallTiles, arrWallTileSrcSpritePixelRect, vBaseTileReference, eSpritePages.WallTiles, arrWallTileColors);
         mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
 
         AddNewTilesToSpritePageAndIndexToMainUVRect(tNavTiles, tNavTilesMask, arrNavTileSrcSpritePixelRect, vBaseTileReference, eSpritePages.NavTiles, arrNavTileColors);
@@ -224,10 +235,12 @@ public class HeroMapVisual : MonoBehaviour
 
         tHeroMapMainSpriteSheetCheck.SetPixels(0, 0, tHeroMapMainSpriteSheet.width, tHeroMapMainSpriteSheet.height, cCheck);
         tHeroMapMainSpriteSheetCheck.Apply();
-        
+    }
 
-
-
+    // Start is called before the first frame update
+    void Start()
+    {
+     
 
     }
 
@@ -263,6 +276,7 @@ public class HeroMapVisual : MonoBehaviour
             //BlackBocks.MergeColorArray(arrBasePixels, arrSrcPixels);
             //tHeroMapMainSpriteSheet.SetPixels(rMainUVRect.x, rMainUVRect.y, rMainUVRect.width, rMainUVRect.height, arrBasePixels);
             //Do try and center
+            //Debug.Log(inSpirteSheet.name + "," +  inSpritePage + aSrcSpriteIndexAndSrcRect.iSrcSpriteIndex);
             tHeroMapMainSpriteSheet.SetPixels(
                 (int)(rMainUVRect.x + (rMainUVRect.width - aSrcSpriteIndexAndSrcRect.vSrcUVPixels.width) / 2), 
                 (int)(rMainUVRect.y + (rMainUVRect.height - aSrcSpriteIndexAndSrcRect.vSrcUVPixels.height) / 2), 
@@ -275,12 +289,7 @@ public class HeroMapVisual : MonoBehaviour
             dSpritePageAndIndexToMainUVRect[(inSpritePage, aSrcSpriteIndexAndSrcRect.iSrcSpriteIndex)] = new Rect((float)rMainUVRect.x / (float)tHeroMapMainSpriteSheet.width, (float)rMainUVRect.y / tHeroMapMainSpriteSheet.height, (float)rMainUVRect.width / tHeroMapMainSpriteSheet.width, (float)rMainUVRect.height / tHeroMapMainSpriteSheet.height);
         }
     }
-    // Start is called before the first frame update
-    void Start()
-    {
-        //arrGrid = new Grid<int>(20, 20, 10f, Vector3.zero);
 
-    }
 
     public void SetGrid(BlackBocksGrid<HeroTile> inGrid)
     {
@@ -310,19 +319,142 @@ public class HeroMapVisual : MonoBehaviour
     }
     public void UpdateHeroMapVisuals()
     {
-        if (cGameCombatHandler == null)
-        {
-            cGameCombatHandler = GameCombatHandler.Instance;
-        }
-        BlackBocks.CreateEmptyMeshArrays(
-            (arrGrid.GetWidth() * arrGrid.GetHeight()) * iNumLayers
-            + (cGameCombatHandler.lPlayerTeam.Count + cGameCombatHandler.lEnemyTeam.Count) * iNumLayers, out Vector3[] vVertices, out Vector2[] vUVs, out int[] iTriangles);
         Vector3 vQuadSize = arrGrid.GetCellSize() * new Vector3(1, 1);
         Vector3 vWallSize = arrGrid.GetCellSize() * new Vector3((float)iWall/(float)iBaseTile, 1);
         Vector3 vNorthWall = arrGrid.GetCellSize() * new Vector3( 0.5f,  1.0f - (float)iWall / (float)iBaseTile/2); 
         Vector3 vEastWall  = arrGrid.GetCellSize() * new Vector3( 1.0f - (float)iWall / (float)iBaseTile / 2,  0.5f);
         Vector3 vSouthWall = arrGrid.GetCellSize() * new Vector3( 0.5f,  0.0f + (float)iWall / (float)iBaseTile / 2);
         Vector3 vWestWall  = arrGrid.GetCellSize() * new Vector3( 0.0f + (float)iWall / (float)iBaseTile / 2,  0.5f);
+        Vector3[] vVertices;
+        Vector2[] vUVs;
+        int[] iTriangles;
+
+        if (cGameCombatHandler != null)
+        {
+
+            BlackBocks.CreateEmptyMeshArrays(
+                (arrGrid.GetWidth() * arrGrid.GetHeight()) * iNumLayers
+                + (cGameCombatHandler.lPlayerTeam.Count + cGameCombatHandler.lEnemyTeam.Count) * iNumLayers
+                + 1, out Vector3[] vVerticesT, out Vector2[] vUVsT, out int[] iTrianglesT);
+            vVertices = vVerticesT;
+            vUVs = vUVsT;
+            iTriangles = iTrianglesT;
+
+            foreach (Player aPlayer in cGameCombatHandler.lPlayerTeam)
+            {
+                int i = arrGrid.GetHeight() * arrGrid.GetWidth() * iNumLayers + aPlayer.GetMoveableKey().Item2 * iNumLayers;
+
+                BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 0,
+                    arrGrid.GetWorldPosition(aPlayer.GetPos().x + .5f, aPlayer.GetPos().y + .5f)
+                    , 0, vQuadSize * .9f,
+                    dSpritePageAndIndexToMainUVRect[(eSpritePages.PlayerTiles, aPlayer.GetRefIndex())]);
+
+                if (aPlayer.GetPlayerState() != ePlayerStateType.Idle)
+                {
+                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 1,
+                        arrGrid.GetWorldPosition(aPlayer.GetMoveTarget().x + .5f, aPlayer.GetMoveTarget().y + .5f)
+                        , 0, vQuadSize * .9f,
+                        dSpritePageAndIndexToMainUVRect[(eSpritePages.MoveTiles, (int)eVisualIcons.CornerSelector)]);
+
+                    if (aPlayer.lCurrentPath != null)
+                    {
+                        for (int iPathIndex = 0; iPathIndex < aPlayer.lCurrentPath.Count - 1; iPathIndex++)
+                        {
+                            Debug.DrawLine(arrGrid.GetWorldPosition(aPlayer.lCurrentPath[iPathIndex + 0].x + .5f, aPlayer.lCurrentPath[iPathIndex + 0].y + .5f),
+                                    arrGrid.GetWorldPosition(aPlayer.lCurrentPath[iPathIndex + 1].x + .5f, aPlayer.lCurrentPath[iPathIndex + 1].y + .5f),
+                                    Color.blue);
+
+                        }
+                        if (aPlayer.lCurrentPath.Count > 0)
+                        {
+                            Debug.DrawLine(arrGrid.GetWorldPosition(aPlayer.GetPos().x + .5f, aPlayer.GetPos().y + .5f),
+                                       arrGrid.GetWorldPosition(aPlayer.lCurrentPath[0].x + .5f, aPlayer.lCurrentPath[0].y + .5f),
+                                       Color.blue);
+                        }
+                    }
+
+                    if (aPlayer.lMoveRange != null)
+                    {
+                        foreach (HeroTile aTile in aPlayer.lMoveRange)
+                        {
+                            int j = aTile.GetPosition().x * arrGrid.GetHeight() * iNumLayers + aTile.GetPosition().y * iNumLayers;
+                            BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, j + 6,
+                              arrGrid.GetWorldPosition(aTile.GetPosition().x + .5f, aTile.GetPosition().y + .5f)
+                              , 0, vQuadSize * .9f,
+                              dSpritePageAndIndexToMainUVRect[(eSpritePages.MoveTiles, (int)eVisualIcons.OutlineSelector)]);
+
+                        }
+                    }
+                }
+            }
+
+            foreach (Player aPlayer in cGameCombatHandler.lEnemyTeam)
+            {
+                int i = arrGrid.GetHeight() * arrGrid.GetWidth() * iNumLayers + cGameCombatHandler.lPlayerTeam.Count * iNumLayers + aPlayer.GetMoveableKey().Item2 * iNumLayers;
+                BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 0,
+                    arrGrid.GetWorldPosition(aPlayer.GetPos().x + .5f, aPlayer.GetPos().y + .5f)
+                    , 0, vQuadSize * .9f,
+                    dSpritePageAndIndexToMainUVRect[(eSpritePages.EnemyTiles, aPlayer.GetRefIndex())]);
+
+                if (aPlayer.GetPlayerState() != ePlayerStateType.Idle)
+                {
+                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 1,
+                        arrGrid.GetWorldPosition(aPlayer.GetMoveTarget().x + .5f, aPlayer.GetMoveTarget().y + .5f)
+                        , 0, vQuadSize * .9f,
+                        dSpritePageAndIndexToMainUVRect[(eSpritePages.MoveTiles, (int)eVisualIcons.CornerSelector)]);
+
+                    if (aPlayer.lCurrentPath != null)
+                    {
+                        for (int iPathIndex = 0; iPathIndex < aPlayer.lCurrentPath.Count - 1; iPathIndex++)
+                        {
+                            Debug.DrawLine(arrGrid.GetWorldPosition(aPlayer.lCurrentPath[iPathIndex + 0].x + .5f, aPlayer.lCurrentPath[iPathIndex + 0].y + .5f),
+                                    arrGrid.GetWorldPosition(aPlayer.lCurrentPath[iPathIndex + 1].x + .5f, aPlayer.lCurrentPath[iPathIndex + 1].y + .5f),
+                                    Color.blue);
+
+                        }
+                        if (aPlayer.lCurrentPath.Count > 0)
+                        {
+                            Debug.DrawLine(arrGrid.GetWorldPosition(aPlayer.GetPos().x + .5f, aPlayer.GetPos().y + .5f),
+                                       arrGrid.GetWorldPosition(aPlayer.lCurrentPath[0].x + .5f, aPlayer.lCurrentPath[0].y + .5f),
+                                       Color.blue);
+                        }
+                    }
+
+                    if (aPlayer.lMoveRange != null)
+                    {
+                        foreach (HeroTile aTile in aPlayer.lMoveRange)
+                        {
+                            int j = aTile.GetPosition().x * arrGrid.GetHeight() * iNumLayers + aTile.GetPosition().y * iNumLayers;
+                            BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, j + 6,
+                              arrGrid.GetWorldPosition(aTile.GetPosition().x + .5f, aTile.GetPosition().y + .5f)
+                              , 0, vQuadSize * .9f,
+                              dSpritePageAndIndexToMainUVRect[(eSpritePages.MoveTiles, (int)eVisualIcons.OutlineSelector)]);
+
+                        }
+                    }
+                }
+            }
+
+            if (GameCombatHandler.Instance.sCursor.Item1 != eSpritePages.None)
+            {
+                int j = GameCombatHandler.Instance.sCursor.Item3.x * arrGrid.GetHeight() * iNumLayers + GameCombatHandler.Instance.sCursor.Item3.y * iNumLayers;
+                BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, j + 7,
+                  arrGrid.GetWorldPosition(GameCombatHandler.Instance.sCursor.Item3.x + .5f, GameCombatHandler.Instance.sCursor.Item3.y + .5f)
+                  , 0, vQuadSize * .9f,
+                  dSpritePageAndIndexToMainUVRect[(GameCombatHandler.Instance.sCursor.Item1, (int)GameCombatHandler.Instance.sCursor.Item2)]);
+            }
+
+        }
+        else
+        {
+            BlackBocks.CreateEmptyMeshArrays(
+                (arrGrid.GetWidth() * arrGrid.GetHeight()) * iNumLayers
+                + 1, out Vector3[] vVerticesT, out Vector2[] vUVsT, out int[] iTrianglesT);
+            vVertices = vVerticesT;
+            vUVs = vUVsT;
+            iTriangles = iTrianglesT;
+        }
+
         for (int x = 0; x < arrGrid.GetWidth(); x++)
         {
             for (int y = 0; y < arrGrid.GetHeight(); y++)
@@ -373,96 +505,7 @@ public class HeroMapVisual : MonoBehaviour
         }
 
         
-        foreach (Player aPlayer in cGameCombatHandler.lPlayerTeam)
-        {
-            int i = arrGrid.GetHeight() * arrGrid.GetWidth() * iNumLayers + aPlayer.GetMoveableKey().Item2 * iNumLayers;
-            
-            BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 0, 
-                arrGrid.GetWorldPosition(aPlayer.GetPos().x + .5f, aPlayer.GetPos().y +.5f)
-                , 0, vQuadSize * .9f,
-                dSpritePageAndIndexToMainUVRect[(eSpritePages.PlayerTiles, aPlayer.GetRefIndex())]);
-
-            if (aPlayer.GetPlayerState() != ePlayerStateType.Idle)
-            {
-                BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 1,
-                    arrGrid.GetWorldPosition(aPlayer.GetMoveTarget().x + .5f, aPlayer.GetMoveTarget().y + .5f)
-                    , 0, vQuadSize * .9f,
-                    dSpritePageAndIndexToMainUVRect[(eSpritePages.VisualTiles, (int)eVisualIcons.ActSelector)]);
-
-                if (aPlayer.lCurrentPath != null)
-                {
-                    for (int iPathIndex = 0; iPathIndex < aPlayer.lCurrentPath.Count - 1; iPathIndex++)
-                    {
-                        Debug.DrawLine(arrGrid.GetWorldPosition(aPlayer.lCurrentPath[iPathIndex + 0].x + .5f, aPlayer.lCurrentPath[iPathIndex + 0].y + .5f),
-                                arrGrid.GetWorldPosition(aPlayer.lCurrentPath[iPathIndex + 1].x + .5f, aPlayer.lCurrentPath[iPathIndex + 1].y + .5f),
-                                Color.blue);
-
-                    }
-                    Debug.DrawLine(arrGrid.GetWorldPosition(aPlayer.GetPos().x + .5f, aPlayer.GetPos().y + .5f),
-                               arrGrid.GetWorldPosition(aPlayer.lCurrentPath[0].x + .5f, aPlayer.lCurrentPath[0].y + .5f),
-                               Color.blue);
-                }
-
-                if (aPlayer.lMoveRange != null)
-                {
-                    foreach (HeroTile aTile in aPlayer.lMoveRange)
-                    {
-                        int j = aTile.GetPosition().x * arrGrid.GetHeight() * iNumLayers + aTile.GetPosition().y * iNumLayers;
-                        BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, j + 6,
-                          arrGrid.GetWorldPosition(aTile.GetPosition().x + .5f, aTile.GetPosition().y + .5f)
-                          , 0, vQuadSize * .9f,
-                          dSpritePageAndIndexToMainUVRect[(eSpritePages.VisualTiles, (int)eVisualIcons.MoveSelector)]);
-
-                    }
-                }
-            }
-        }
-
-        foreach (Player aPlayer in cGameCombatHandler.lEnemyTeam)
-        {
-            int i = arrGrid.GetHeight() * arrGrid.GetWidth() * iNumLayers + cGameCombatHandler.lPlayerTeam.Count * iNumLayers + aPlayer.GetMoveableKey().Item2 * iNumLayers;
-            BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 0,
-                arrGrid.GetWorldPosition(aPlayer.GetPos().x + .5f, aPlayer.GetPos().y + .5f)
-                , 0, vQuadSize * .9f,
-                dSpritePageAndIndexToMainUVRect[(eSpritePages.EnemyTiles, aPlayer.GetRefIndex())]);
-            
-            if (aPlayer.GetPlayerState() != ePlayerStateType.Idle)
-            {
-                BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + 1,
-                    arrGrid.GetWorldPosition(aPlayer.GetMoveTarget().x + .5f, aPlayer.GetMoveTarget().y + .5f)
-                    , 0, vQuadSize * .9f,
-                    dSpritePageAndIndexToMainUVRect[(eSpritePages.VisualTiles, (int)eVisualIcons.ActSelector)]);
-
-                if (aPlayer.lCurrentPath != null)
-                {
-                    for (int iPathIndex = 0; iPathIndex < aPlayer.lCurrentPath.Count - 1; iPathIndex++)
-                    {
-                        Debug.DrawLine(arrGrid.GetWorldPosition(aPlayer.lCurrentPath[iPathIndex + 0].x + .5f, aPlayer.lCurrentPath[iPathIndex + 0].y + .5f),
-                                arrGrid.GetWorldPosition(aPlayer.lCurrentPath[iPathIndex + 1].x + .5f, aPlayer.lCurrentPath[iPathIndex + 1].y + .5f),
-                                Color.blue);
-
-                    }
-                    Debug.DrawLine(arrGrid.GetWorldPosition(aPlayer.GetPos().x + .5f, aPlayer.GetPos().y + .5f),
-                               arrGrid.GetWorldPosition(aPlayer.lCurrentPath[0].x + .5f, aPlayer.lCurrentPath[0].y + .5f),
-                               Color.blue);
-                }
-
-                if (aPlayer.lMoveRange != null)
-                {
-                    foreach (HeroTile aTile in aPlayer.lMoveRange)
-                    {
-                        int j = aTile.GetPosition().x * arrGrid.GetHeight() * iNumLayers + aTile.GetPosition().y * iNumLayers;
-                        BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, j + 6,
-                          arrGrid.GetWorldPosition(aTile.GetPosition().x + .5f, aTile.GetPosition().y + .5f)
-                          , 0, vQuadSize * .9f,
-                          dSpritePageAndIndexToMainUVRect[(eSpritePages.VisualTiles, (int)eVisualIcons.MoveSelector)]);
-
-                    }
-                }
-            }
-        }
-
-
+       
 
         mMesh.vertices = vVertices;
         mMesh.uv = vUVs;
@@ -503,6 +546,18 @@ public class HeroMapVisual : MonoBehaviour
         arrGrid.GetGridObject(v00.x, v11.y).SetNav(eNavType.NorthWest);
         arrGrid.GetGridObject(v11.x, v11.y).SetNav(eNavType.NorthEast);
         arrGrid.GetGridObject(v11.x, v00.y).SetNav(eNavType.SouthEast);
+    }
+
+    public void SetRoomFrom00to11(Vector2Int v00, Vector2Int v11, int inBaseIndex)
+    {
+
+        for (int x = v00.x; x <= v11.x; x++)
+        {
+            for (int y = v00.y; y <= v11.y; y++)
+            {
+                arrGrid.GetGridObject(x, y).SetRoomID((eRoomIDs)inBaseIndex);
+            }
+        }
     }
 
 

@@ -9,6 +9,7 @@ public class HeroTileTesting : MonoBehaviour
 
     private BlackBocksGrid<HeroTile> arrGrid;
     [SerializeField] private HeroMapVisual hHeroMapVisual;
+    private PathFinding<HeroTile> pPathFinding;
     [SerializeField] private bool bDebugEnabled = true;
     //[SerializeField] private int iWidth;
     //[SerializeField] private int iHeight;
@@ -29,15 +30,20 @@ public class HeroTileTesting : MonoBehaviour
     //[SerializeField] private int iHeightOffset;
     // Start is called before the first frame update
 
+    private void Awake()
+    {
+        arrGrid = new BlackBocksGrid<HeroTile>(iWidth, iHeight, 4, new Vector3(-51, -37), (BlackBocksGrid<HeroTile> g, int x, int y) => new HeroTile(g, x, y));
+        new PathFinding<HeroTile>(arrGrid);
+        hHeroMapVisual.SetGrid(arrGrid);
+        
+    }
     private void Start()
     {
+        pPathFinding = PathFinding<HeroTile>.Instance;
         // arrGrid = new Grid<HeroTile>(iWidth, iHeight, iScale,new Vector3(iWidthOffset, iHeightOffset),() => new HeroTile());
         //hHeroMapVisual.SetGrid(arrGrid);
         //arrGrid = new Grid<HeatMapGridObject>(iWidth, iHeight, iScale, new Vector3(iWidthOffset, iHeightOffset), () => new HeatMapGridObject());
-        arrGrid = new BlackBocksGrid<HeroTile>(iWidth, iHeight, 4, new Vector3(-51, -37), (BlackBocksGrid<HeroTile> g, int x, int y) => new HeroTile(g, x, y));
-        new PathFinding<HeroTile>(arrGrid);
         hHeroMapVisual.bDebugEnabled = bDebugEnabled;
-        hHeroMapVisual.SetGrid(arrGrid);
 
         hHeroMapVisual.CreateRoomFrom00to11(new Vector2Int(0, 0), new Vector2Int(iWidth-1, iHeight-1), 0, 0);
 
@@ -131,7 +137,7 @@ public class HeroTileTesting : MonoBehaviour
         arrGrid.GetGridObject(18, 5).SetNav(eNavType.SouthWest);
 
 
-
+        //hHeroMapVisual.Load();
 
         // hHeroMapVisual.UpdateHeroMapVisuals();
 
@@ -141,7 +147,7 @@ public class HeroTileTesting : MonoBehaviour
     void Update()
     {
 
-        lLastRange = PathFinding<HeroTile>.Instance.FindPathWithRange(vStartPos.x, vStartPos.y, 12);
+        lLastRange = pPathFinding.FindPathWithRange(vStartPos.x, vStartPos.y, 12,eMoveableType.None);
         Vector3 vPosition = BlackBocks.GetMouseWorldPosition();
         //hHeatMapVisual.bDebugEnabled = bDebugEnabled;
         if (Input.GetMouseButtonDown(0))
@@ -268,13 +274,13 @@ public class HeroTileTesting : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.N))
         {
             //Vector3 vMouseWorldPosition = BlackBocks.GetMouseWorldPosition();
-            Vector2Int vEndPos = PathFinding<HeroTile>.Instance.GetGrid().GetGridPostion(vPosition);
+            Vector2Int vEndPos = pPathFinding.GetGrid().GetGridPostion(vPosition);
             //List<PathNode> lPath = pPathFinding.FindPath(0, 0, vEndPos.x, vEndPos.y);
             lLastPath = new List<HeroTile>();
             //lLastPath = pPathFinding.FindPath(0, 0, vEndPos.x, vEndPos.y);
             if (arrGrid.IsValid(vEndPos))
             {
-                lLastPath = PathFinding<HeroTile>.Instance.FindPath(vStartPos.x, vStartPos.y, vEndPos.x, vEndPos.y);
+                lLastPath = PathFinding<HeroTile>.Instance.FindPath(vStartPos.x, vStartPos.y, vEndPos.x, vEndPos.y,eMoveableType.None);
                 arrGrid.TriggerGridObjectChanged(vEndPos);
             }
         }
@@ -282,10 +288,117 @@ public class HeroTileTesting : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.KeypadPeriod))
         {
             //Vector3 vMouseWorldPosition = BlackBocks.GetMouseWorldPosition();
-            Vector2Int vNewPos = PathFinding<HeroTile>.Instance.GetGrid().GetGridPostion(vPosition);
+            Vector2Int vNewPos = pPathFinding.GetGrid().GetGridPostion(vPosition);
             if (arrGrid.IsValid(vNewPos))
             {
                 vStartPos = vNewPos;
+            }
+        }
+        if(Input.GetKeyDown(KeyCode.R))
+        {
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(0, 0), new Vector2Int(iWidth - 1, iHeight - 1), 0);
+
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(1, 15), new Vector2Int(4, 17), 1);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(5, 15), new Vector2Int(8, 17), 2);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(9, 13), new Vector2Int(11, 17), 3);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(1, 10), new Vector2Int(4, 14), 4);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(5, 10), new Vector2Int(8, 14), 5);
+
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(14, 13), new Vector2Int(16, 17), 6);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(17, 14), new Vector2Int(20, 17), 7);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(21, 14), new Vector2Int(24, 17), 8);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(17, 10), new Vector2Int(20, 13), 9);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(21, 10), new Vector2Int(24, 13), 10);
+
+
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(10, 7), new Vector2Int(15, 11), 11);
+
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(1, 1), new Vector2Int(4, 4), 12);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(1, 5), new Vector2Int(4, 8), 13);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(5, 6), new Vector2Int(6, 8), 14);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(7, 6), new Vector2Int(8, 8), 15);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(5, 1), new Vector2Int(8, 5), 16);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(9, 1), new Vector2Int(11, 5), 17);
+
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(17, 5), new Vector2Int(20, 8), 18);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(21, 5), new Vector2Int(24, 8), 19);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(14, 1), new Vector2Int(17, 5), 20);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(18, 1), new Vector2Int(20, 4), 21);
+            //hHeroMapVisual.SetRoomFrom00to11(new Vector2Int(21, 1), new Vector2Int(24, 4), 22);
+            for(int x = 0; x < iWidth; x++)
+            {
+                for (int y = 0; y< iHeight;y++)
+                {
+                    if (arrGrid.GetGridObject(x, y).GetNavTileIndex() == eNavTiles.WallTileFallen || arrGrid.GetGridObject(x, y).GetNavTileIndex() == eNavTiles.WallTileDouble0 || arrGrid.GetGridObject(x, y).GetNavTileIndex() == eNavTiles.WallTileDouble1 || arrGrid.GetGridObject(x, y).GetNavTileIndex() == eNavTiles.WallTileSingle  )
+                    {
+                        arrGrid.GetGridObject(x, y).SetNav(eNavType.All);
+                        arrGrid.GetGridObject(x, y).SetMoveable((eMoveableType.Furniture, x * iWidth + y));
+                    }
+                    //HeroTile aTile = arrGrid.GetGridObject(x, y);
+                    //if (aTile.GetNavTileIndex() == eNavTiles.DoorSouthClosed || aTile.GetNavTileIndex() == eNavTiles.DoorNorthClosed)
+                    //{
+                    //    if(aTile.GetNavTileIndex() == eNavTiles.DoorSouthClosed)
+                    //    {
+                    //        if(aTile.GetTileRotation()== 90)
+                    //        {
+                    //            if(aTile.eNav == eNavType.WestEast)
+                    //            {
+                    //                aTile.SetNav(eNavType.West);
+                    //            }
+
+                    //            if (aTile.eNav == eNavType.East)
+                    //            {
+                    //                aTile.SetNav(eNavType.Any);
+                    //            }
+                    //        }
+                    //        if (aTile.GetTileRotation() == 0)
+                    //        {
+                    //            if (aTile.eNav == eNavType.NorthSouth)
+                    //            {
+                    //                aTile.SetNav(eNavType.North);
+                    //            }
+
+                    //            if (aTile.eNav == eNavType.South)
+                    //            {
+                    //                aTile.SetNav(eNavType.Any);
+                    //            }
+                    //        }
+                    //    }
+
+
+                    //    if (aTile.GetNavTileIndex() == eNavTiles.DoorNorthClosed)
+                    //    {
+                    //        if (aTile.GetTileRotation() == 90)
+                    //        {
+                    //            if (aTile.eNav == eNavType.WestEast)
+                    //            {
+                    //                aTile.SetNav(eNavType.East);
+                    //            }
+                    //            if (aTile.eNav == eNavType.West)
+                    //            {
+                    //                aTile.SetNav(eNavType.Any);
+                    //            }
+                    //        }
+                    //        if (aTile.GetTileRotation() == 0)
+                    //        {
+                    //            if (aTile.eNav == eNavType.NorthSouth)
+                    //            {
+                    //                aTile.SetNav(eNavType.South);
+                    //            }
+                    //            if (aTile.eNav == eNavType.North)
+                    //            {
+                    //                aTile.SetNav(eNavType.Any);
+                    //            }
+                    //        }
+                    //    }
+
+                    //}
+
+
+                }
+            }
+            {
+
             }
         }
 
