@@ -65,8 +65,8 @@ public class BlackBocksGrid<TGridObject>
                 }
             }
 
-            Debug.DrawLine(GetWorldPosition(0, iWidth), GetWorldPosition(iHeight, iWidth), Color.white, 10);
-            Debug.DrawLine(GetWorldPosition(iHeight, 0), GetWorldPosition(iHeight, iWidth), Color.white, 10);
+            Debug.DrawLine(GetWorldPosition(0, iHeight), GetWorldPosition(iWidth, iHeight), Color.green, 10);
+            Debug.DrawLine(GetWorldPosition(iWidth, 0), GetWorldPosition(iWidth, iHeight), Color.blue, 10);
 
             OnGridObjectChanged += (object sender, OnGridObjectChangedEventArgs eventArgs) =>
             {

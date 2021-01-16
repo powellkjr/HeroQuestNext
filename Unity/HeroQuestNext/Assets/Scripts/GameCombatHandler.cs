@@ -4,11 +4,12 @@ using UnityEngine;
 
 public class GameCombatHandler : MonoBehaviour
 {
-    private BlackBocksGrid<HeroTile> arrGrid;
+    //private BlackBocksGrid<HeroTile> arrGrid;
     private PathFinding<HeroTile> pPathFinding;
-    private DiceManager cDiceManager;
+    
     public static GameCombatHandler Instance { get; private set; }
 
+    
     public List<Player> lPlayerTeam;
     public List<Player> lEnemyTeam;
 
@@ -68,19 +69,37 @@ public class GameCombatHandler : MonoBehaviour
     private int iUsePlayers;
     [SerializeField]
     private int iUseEnemies;
+    
     // Start is called before the first frame update
+    public int GetUsePlayer()
+    { 
+        return iUsePlayers;
+    }
+
+    public int GetUseEnemies()
+    {
+        return iUseEnemies;
+    }
     private void Awake()
     {
         Instance = this;
-        new DiceManager();
-        cDiceManager = DiceManager.Instance;
+       
     }
     private void Start()
     {
         pPathFinding = PathFinding<HeroTile>.Instance;
-        arrGrid = HeroMap.Instance.GetGrid();
+        //arrGrid = HeroMap.Instance.GetGrid();
         HeroMapVisual.Instance.SetGameCombatHandler(this);
         HeroMapVisual.Instance.Load();
+        for(int x = 0; x<HeroMap.GetWidth();x++)
+        {
+            for(int y=0; y< HeroMap.GetHeight();y++)
+            {
+                HeroMap.GetGridObject(x, y).bTrapScanned = false;
+                HeroMap.GetGridObject(x, y).bVisible = false;
+                HeroMap.GetGridObject(x, y).bTreasureScanned = false;
+            }
+        }
         lPlayerTeam = new List<Player>();
         for (int i = 0; i < Mathf.Min(iUsePlayers, iPlayerCount); i++)
         {
@@ -110,7 +129,8 @@ public class GameCombatHandler : MonoBehaviour
 
         GetNextPlayerTurn();
         //HeroMapVisual.Instance.SetGameCombatHandler(Instance);
-
+        //lPlayerTeam[0].OnSkillUpdate += PlayerWidgetController.Instance.PlayerWidgetController_OnSkillUpdate;
+        lPlayerTeam[0].OnSkillUpdate += PlayerWidgetController.SetPlayerWidgetText_Static;
 
     }
 
@@ -118,25 +138,65 @@ public class GameCombatHandler : MonoBehaviour
     void Update()
     {
         sCursor = (eSpritePages.MoveTiles, eVisualIcons.CornerSelector, pCurrentPlayer.GetPosXY());
-        if (pCurrentPlayer.GetMoveableKey().Item1 == eMoveableType.Player && pCurrentPlayer.GetPlayerState() == ePlayerStateType.WaitingForMoveTarget)
+        if (pCurrentPlayer.GetMoveableKey().Item1 == eMoveableType.Player && pCurrentPlayer.GetPlayerState() == ePlayerStateType.TurnActive)
         {
 
             Vector3 vMousePositon = BlackBocks.GetMouseWorldPosition();
             Vector2Int vEndPos = pPathFinding.GetGrid().GetGridPostion(vMousePositon);
-            if (arrGrid.IsValid(vEndPos))
+            if (HeroMap.IsValid(vEndPos))
             {
-                sCursor = (eSpritePages.ActTiles, eVisualIcons.CornerSelector, vEndPos);
-                arrGrid.TriggerGridObjectChanged(vEndPos);
-                if (pCurrentPlayer.lMoveRange != null && pCurrentPlayer.lMoveRange.Count > 0 && pCurrentPlayer.lMoveRange.Contains(arrGrid.GetGridObject(vEndPos)))
+                sCursor = (eSpritePages.ScanTiles, eVisualIcons.CornerSelector, vEndPos);
+                HeroMap.TriggerGridObjectChanged(vEndPos);
+
+                if (pCurrentPlayer.CanAct() && pCurrentPlayer.lActRange != null && pCurrentPlayer.lActRange.Count > 0 && (pCurrentPlayer.lActRange.Contains(HeroMap.GetGridObject(vEndPos)) || pCurrentPlayer.GetPosXY() == vEndPos))
+                {
+                    sCursor = (eSpritePages.ActTiles, eVisualIcons.CornerSelector, vEndPos);
+                    //arrGrid.TriggerGridObjectChanged(vEndPos);
+                    //hHeatMapVisual.bDebugEnabled = bDebugEnabled;
+                    if (Input.GetMouseButtonDown(1))
+                    {
+                        if (vEndPos == pCurrentPlayer.GetPosXY())
+                        {
+                            pCurrentPlayer.SkipPlayerAct();
+                        }
+                        List<(eMoveableType, int)> tMoveable = HeroMap.GetGridObject(vEndPos).GetMoveable();
+                        if (tMoveable != null && tMoveable.Count == 1)
+                        {
+                            if (tMoveable[0].Item1 == eMoveableType.Enemy)
+                            {
+                                Player tEnemy = GetEnemyPlayerFromRef(tMoveable[0].Item2);
+                                StartCombat(pCurrentPlayer, tEnemy, out bool bTargetkilled);
+                                if (bTargetkilled)
+                                {
+                                    
+                                    int iRemove = GetEnemyIndexFromRef(tMoveable[0].Item2);
+                                    lEnemyTeam.RemoveAt(iRemove);
+                                            HeroMap.GetGridObject(vEndPos).HasLeft(tEnemy.GetMoveableKey());
+                                }
+                                pCurrentPlayer.SkipPlayerAct();
+                            }
+                        }
+
+
+                    }
+                }
+                if (pCurrentPlayer.CanMove() && pCurrentPlayer.lMoveRange != null && pCurrentPlayer.lMoveRange.Count > 0 && (pCurrentPlayer.lMoveRange.Contains(HeroMap.GetGridObject(vEndPos)) || pCurrentPlayer.GetPosXY() == vEndPos))
                 {
 
-                    sCursor = (eSpritePages.MoveTiles, eVisualIcons.CornerSelector,vEndPos);
+                    sCursor = (eSpritePages.MoveTiles, eVisualIcons.CornerSelector, vEndPos);
                     //arrGrid.TriggerGridObjectChanged(vEndPos);
                     //hHeatMapVisual.bDebugEnabled = bDebugEnabled;
                     if (Input.GetMouseButtonDown(0))
                     {
-                        pCurrentPlayer.SetMoveTarget(vEndPos);
+                        if (vEndPos == pCurrentPlayer.GetPosXY())
+                        {
+                            pCurrentPlayer.SkipPlayerMove();
+                        }
+                        else
+                        {
+                            pCurrentPlayer.SetMoveTarget(vEndPos);
 
+                        }
                     }
                 }
             }
@@ -153,12 +213,44 @@ public class GameCombatHandler : MonoBehaviour
             aPlayer.GameCombatUpdate();
         }
 
-        
+        HeroMap.TriggerGridObjectChanged(pCurrentPlayer.GetPosXY());
         GetNextPlayerTurn();
 
 
     }
 
+    public Player GetEnemyPlayerFromRef(int inRef)
+    {
+        for(int i = 0; i < lEnemyTeam.Count; i++)
+        {
+            if(lEnemyTeam[i].GetMoveableKey().Item2 == inRef)
+            {
+                return lEnemyTeam[i];
+            }
+        }
+        return null;
+    }
+
+    public int GetEnemyIndexFromRef(int inRef)
+    {
+        for (int i = 0; i < lEnemyTeam.Count; i++)
+        {
+            if (lEnemyTeam[i].GetMoveableKey().Item2 == inRef)
+            { 
+                return i;
+            }
+        }
+        return -1;
+    }
+    private void StartCombat(Player inAttackPlayer, Player inDefendPlayer, out bool bTargetKilled)
+    {
+        eDiceFace eDefendFace = inDefendPlayer.GetDefendFace();
+        int iAttackDice = inAttackPlayer.GetStats().iAttackDice;
+        int iDefendDice = inAttackPlayer.GetStats().iDefenceDice;
+        int iDamage = DiceManager.RollForAttack(iAttackDice, eDiceFace.Skull, iDefendDice, eDefendFace);
+        inDefendPlayer.TakeDamage(iDamage);
+        bTargetKilled = inDefendPlayer.GetStats().iHitPoints <= 0;
+    }
     private void GetNextPlayerTurn()
     {
         if (pCurrentPlayer.GetPlayerState() != ePlayerStateType.Idle)

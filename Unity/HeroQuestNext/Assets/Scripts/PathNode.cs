@@ -30,6 +30,7 @@ public class PathNode : IPathable<PathNode>
         return lMoveable;
     }
 
+    public eRoomIDs GetRoomID() { return (eRoomIDs)0; }
     public bool IsBlocked(eNavType inNavType, eMoveableType inMoveable = eMoveableType.None)
     {
             switch (inNavType)

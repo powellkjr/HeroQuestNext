@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using System;
+using Random = UnityEngine.Random;
 
 public enum eTeamType
 {
@@ -16,6 +18,7 @@ public enum ePlayerStateType
     WaitingForActTarget,
     MovingToTarget,
     AtTarget,
+    ActComplete,
     TurnComplete,
     TurnActive,
     Reset,
@@ -29,38 +32,7 @@ public enum eAI_StateType
     FleeTarget,
     Manual,
 }
-public enum eEquipmentType
-{
-    Core,
-    Head,
-    Gloves,     
-    Weapon,
-    Total
-}
-public struct sEquipmentData
-{
-    public int iRefIndex;
-    public eEquipmentType eSlot;
-    public int iMoveSquares;
-    public int iAttackDice;
-    public int iDefenceDice;
-    public eDiceFace eAttackFace;
-    public eDiceFace eDefenceFace;
-    public int iHitPoints;
-    public int iMindPoints;
 
-    public static sEquipmentData operator +(sEquipmentData sLeftSide, sEquipmentData sRightSide)
-    {
-        return new sEquipmentData
-        {
-            iMoveSquares = sLeftSide.iMoveSquares + sRightSide.iMoveSquares,
-            iAttackDice = sLeftSide.iAttackDice + sRightSide.iAttackDice,
-            iDefenceDice = sLeftSide.iMoveSquares + sRightSide.iDefenceDice,
-            iHitPoints = sLeftSide.iHitPoints + sRightSide.iHitPoints,
-            iMindPoints = sLeftSide.iMoveSquares + sRightSide.iMindPoints,
-        };
-    }
-}
 
 
 
@@ -70,204 +42,6 @@ public struct sEquipmentData
 public class Player : MonoBehaviour, ICharacter
 //public class Player :  ICharacter
 {
-    private static List<sEquipmentData> lPlayerEqipment = new List<sEquipmentData> {
-        new sEquipmentData
-        {
-            iRefIndex = (int)ePlayers.None,
-            eSlot = eEquipmentType.Core,
-            iAttackDice = 1,
-            iDefenceDice = 1,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.White,
-            iHitPoints= 1,
-            iMindPoints=1,
-            iMoveSquares = 0
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)ePlayers.Barbarian,
-            eSlot = eEquipmentType.Core,
-            iAttackDice = 3,
-            iDefenceDice = 2,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.White,
-            iHitPoints= 8,
-            iMindPoints=2,
-            iMoveSquares = 0
-            
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)ePlayers.Dwarf,
-            eSlot = eEquipmentType.Core,
-            iAttackDice = 2,
-            iDefenceDice = 2,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.White,
-            iHitPoints= 7,
-            iMindPoints = 3,
-            iMoveSquares = 0
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)ePlayers.Elf,
-            eSlot = eEquipmentType.Core,
-            iAttackDice = 2,
-            iDefenceDice = 2,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.White,
-            iHitPoints= 6,
-            iMindPoints=4,
-            iMoveSquares = 0
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)ePlayers.Wizard,
-            eSlot = eEquipmentType.Core,
-            iAttackDice = 1,
-            iDefenceDice = 2,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.White,
-            iHitPoints= 4,
-            iMindPoints= 6,
-            iMoveSquares = 12
-        },
-    };
-    private static List<sEquipmentData> lMonsterEqipment = new List<sEquipmentData> {
-        new sEquipmentData
-        {
-            iRefIndex = (int)eMonsters.None,
-            eSlot = eEquipmentType.Core,
-            iMoveSquares = 6,
-            iAttackDice = 1,
-            iDefenceDice = 1,
-            iMindPoints=1,
-            iHitPoints= 1,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.Black,
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)eMonsters.Skeleton,
-            eSlot = eEquipmentType.Core,
-            iMoveSquares = 6,
-            iAttackDice = 2,
-            iDefenceDice = 2,
-            iHitPoints= 1,
-            iMindPoints=0,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.Black,
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)eMonsters.Zombie,
-            eSlot = eEquipmentType.Core,
-            iMoveSquares = 5,
-            iAttackDice = 2,
-            iDefenceDice = 3,
-            iHitPoints= 1,
-            iMindPoints=0,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.Black,
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)eMonsters.Mummy,
-            eSlot = eEquipmentType.Core,
-            iMoveSquares = 4,
-            iAttackDice = 3,
-            iDefenceDice = 4,
-            iHitPoints= 2,
-            iMindPoints=0,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.Black,
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)eMonsters.Goblin,
-            eSlot = eEquipmentType.Core,
-            iMoveSquares = 10,
-            iAttackDice = 2,
-            iDefenceDice = 1,
-            iHitPoints= 1,
-            iMindPoints=1,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.Black,
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)eMonsters.Orc,
-            eSlot = eEquipmentType.Core,
-            iMoveSquares = 8,
-            iAttackDice = 3,
-            iDefenceDice = 2,
-            iHitPoints= 1,
-            iMindPoints=2,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.Black,
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)eMonsters.Fimir,
-            eSlot = eEquipmentType.Core,
-            iMoveSquares = 6,
-            iAttackDice = 3,
-            iDefenceDice = 3,
-            iHitPoints= 2,
-            iMindPoints=3,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.Black,
-        },
-        new sEquipmentData
-        {
-            iRefIndex = (int)eMonsters.ChaosWarrior,
-            eSlot = eEquipmentType.Core,
-            iMoveSquares = 7,
-            iAttackDice = 4,
-            iDefenceDice = 2,
-            iMindPoints=2,
-            iHitPoints= 8,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.Black,
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)eMonsters.Gargoyle,
-            eSlot = eEquipmentType.Core,
-            iMoveSquares = 6,
-            iAttackDice = 4,
-            iDefenceDice = 5,
-            iHitPoints= 3,
-            iMindPoints=4,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.Black,
-        },
-
-        new sEquipmentData
-        {
-            iRefIndex = (int)eMonsters.ChaosScorcer,
-            eSlot = eEquipmentType.Core,
-            iMoveSquares = 0,
-            iAttackDice = 0,
-            iDefenceDice = 0,
-            iMindPoints=0,
-            iHitPoints= 0,
-            eAttackFace= eDiceFace.Skull,
-            eDefenceFace= eDiceFace.Black,
-        },
-    };
-
     private Vector2 vPosition;
     private Vector2 vStartOfMove;
     private Vector2Int vFromOfMove;
@@ -276,10 +50,9 @@ public class Player : MonoBehaviour, ICharacter
     private Vector2 vVelocity;
     private Vector2Int vHomePos;
 
-    eDiceFace eAttackFace;
-    eDiceFace eDefenseFace;
-    eTeamType eTeam;
-    ePlayerStateType ePlayerState;
+    public eTeamType eTeam;
+    private ePlayerStateType ePlayerState;
+    private eEquipmentRefType ePlayerClass;
 
 
     //Texture2D tIcon;
@@ -287,6 +60,9 @@ public class Player : MonoBehaviour, ICharacter
     private PathFinding<HeroTile> pPathFinding;
     public List<HeroTile> lCurrentPath;
     public List<HeroTile> lMoveRange;
+    public List<HeroTile> lScanRange;
+    public List<HeroTile> lActRange;
+    public int iActRange = 1;
     //PathFinding<TGridObject> where TGridObject : IPathable<TGridObject> pPathFinding;
     private BlackBocksGrid<HeroTile> arrGrid;
     private DiceManager cDiceManager;
@@ -294,18 +70,32 @@ public class Player : MonoBehaviour, ICharacter
     //private int iMoveRange = 12;
     private float fMoveSpeed = 4f;
     private bool bMoveReady;
+    private bool bFirstMove;
     private bool bActReady;
-    private sEquipmentData sStats;
-    private List<sEquipmentData> lEquiped;
-    private List<sEquipmentData> lStored;
+    private EquipmentData sStats;
+    private List<EquipmentData> lEquiped;
+    private List<EquipmentData> lStored;
     private eAI_StateType eAI_State;
+    private int iMovesRemaining;
     (eMoveableType, int) sMoveableKey;
     (eMoveableType, int) sAI_TargetKey;
+    private eDiceFace eAttackFace = eDiceFace.Skull;
+    private eDiceFace eDefendFace;
     Vector2Int vAI_TargetLastPos;
 
-    delegate void MyMove();
+    public delegate void MyMove();
     MyMove AI_Move;
 
+    delegate void MyAct();
+
+    //public event EventHandler OnSkillUpdate;
+    public Action<List<EquipmentData>> OnSkillUpdate;
+
+    private void OnSkillUpdate_Local(List<EquipmentData> inEquipmentData)
+    {
+        Debug.Log("OnSkillUpdate_Local" + inEquipmentData[0].tToolTipLong.ToString());
+    }
+    
     public bool CanMove()
     {
         return bMoveReady;
@@ -330,6 +120,19 @@ public class Player : MonoBehaviour, ICharacter
     {
         return iRefIndex;
     }
+
+    public eDiceFace GetDefendFace ()
+    {
+        return eDefendFace;
+    }
+    public void TestButton()
+    {
+        Debug.Log("Clicked a button!");
+    }
+    public EquipmentData GetStats()
+    {
+        return sStats;
+    }
     public void SetMoveRange(int inMoveRange)
     {
         sStats.iMoveSquares = inMoveRange;
@@ -344,6 +147,7 @@ public class Player : MonoBehaviour, ICharacter
             {
                 lCurrentPath = new List<HeroTile>();
                 lCurrentPath = lPath;
+                iMovesRemaining -= (lPath.Count - 1);
                 ePlayerState = ePlayerStateType.MovingToTarget;
                 vStartOfMove = GetPosXY();
                 vFromOfMove = GetPosXY();
@@ -395,33 +199,7 @@ public class Player : MonoBehaviour, ICharacter
     }
 
 
-    public void EquipItem(sEquipmentData inEquipmentData, eEquipmentType inEquipmentType)
-    {
-        for (int i =0; i < lEquiped.Count; i++)
-        {
-            sEquipmentData aEquipment = lEquiped[i];
-            if(aEquipment.eSlot == inEquipmentType)
-            {
-                lStored.Add(aEquipment);
-                lEquiped.RemoveAt(i);
-            }
-        }
-        lEquiped.Add(inEquipmentData);
-        UpdateStats();
-    }
-    public void UpdateStats()
-    {
-        sStats.iMoveSquares = 0;
-        sStats.iAttackDice = 0;
-        sStats.iDefenceDice = 0;
-        sStats.iHitPoints = 0;
-        sStats.iMindPoints = 0;
-
-        foreach (sEquipmentData aEquipment in lEquiped)
-        {
-            sStats += aEquipment;
-        }
-    }
+  
 
     public Player(
         (eMoveableType, int) inMoveableKey,
@@ -432,25 +210,58 @@ public class Player : MonoBehaviour, ICharacter
         vPosition = new Vector2Int(inStartPos.x,inStartPos.y);
         iRefIndex = inStartPos.z;
         bActiveTurn = false;
+       
+
+        lMoveRange = new List<HeroTile>();
+        lActRange = new List<HeroTile>();
         //iMoveRange = inMoveRange;
         ePlayerState = ePlayerStateType.Idle;
         pPathFinding = PathFinding<HeroTile>.Instance;
         arrGrid = HeroMap.Instance.GetGrid();
-        cDiceManager = DiceManager.Instance;
         vHomePos = new Vector2Int(inStartPos.x, inStartPos.y);
+        vMoveTarget = new Vector2Int(inStartPos.x, inStartPos.y);
+        
         arrGrid.GetGridObject(inStartPos.x, inStartPos.y).HasEntered(sMoveableKey);
 
-        lEquiped = new List<sEquipmentData>();
-        lStored = new List<sEquipmentData>();
+        lEquiped = new List<EquipmentData>();
+        lStored = new List<EquipmentData>();
+        sStats = new EquipmentData();
+        
 
         switch (inMoveableKey.Item1)
         {
             case eMoveableType.Player:
                 eTeam = eTeamType.PlayerTeam;
+                eDefendFace = eDiceFace.White;
+                    
+                
+                switch(iRefIndex)
+                {
+                    case (int)ePlayers.Barbarian:
+                        ePlayerClass = eEquipmentRefType.Body_Barbaian;
+                        break;
+                    case (int)ePlayers.Dwarf:
+                        ePlayerClass = eEquipmentRefType.Body_Dwarf;
+                        break;
+                    case (int)ePlayers.Elf:
+                        ePlayerClass = eEquipmentRefType.Body_Elf;
+                        break;
+                    case (int)ePlayers.Wizard:
+                        ePlayerClass = eEquipmentRefType.Body_Wizard;
+                        break;
+                }
+                EquipmentManger.EquipItem_Static(EquipmentManger.GetEquipmentData_Static(ePlayerClass), out sStats, lEquiped, lStored);
+                EquipmentManger.EquipItem_Static(EquipmentManger.GetStartingEquipmentFromBody_Static(ePlayerClass), out sStats, lEquiped, lStored);
+                EquipBasicSkills();
+
                 if (sMoveableKey.Item2 == 0)
                 {
                     AI_Move = WaitForPlayerMove;
                     eAI_State = eAI_StateType.Manual;
+                    PlayerWidgetController.SetPlayerWidgetText_Static(lEquiped);
+                    UpdateScanRange();
+                    OnSkillUpdate += OnSkillUpdate_Local;
+                    UpdateSkillStates();
                 }
                 else
                 {
@@ -458,11 +269,44 @@ public class Player : MonoBehaviour, ICharacter
                     eAI_State = eAI_StateType.FollowTarget;
                     sAI_TargetKey = (eMoveableType.Player, 0);
                 }
-                EquipItem(lPlayerEqipment[iRefIndex], eEquipmentType.Core);
+
                 break;
             case eMoveableType.Enemy:
                 eTeam = eTeamType.EnemyTeam;
-                EquipItem(lMonsterEqipment[iRefIndex], eEquipmentType.Core);
+                eDefendFace = eDiceFace.Black;
+
+                switch (iRefIndex)
+                {
+                    case (int)eMonsters.ChaosScorcer:
+                        ePlayerClass = eEquipmentRefType.Body_ChaosScorcer;
+                        break;
+                    case (int)eMonsters.ChaosWarrior:
+                        ePlayerClass = eEquipmentRefType.Body_ChaosWarrior;
+                        break;
+                    case (int)eMonsters.Fimir:
+                        ePlayerClass = eEquipmentRefType.Body_Fimir;
+                        break;
+                    case (int)eMonsters.Gargoyle:
+                        ePlayerClass = eEquipmentRefType.Body_Gargoyle;
+                        break;
+                    case (int)eMonsters.Goblin:
+                        ePlayerClass = eEquipmentRefType.Body_Goblin;
+                        break;
+                    case (int)eMonsters.Mummy:
+                        ePlayerClass = eEquipmentRefType.Body_Mummy;
+                        break;
+                    case (int)eMonsters.Orc:
+                        ePlayerClass = eEquipmentRefType.Body_Orc;
+                        break;
+                    case (int)eMonsters.Skeleton:
+                        ePlayerClass = eEquipmentRefType.Body_Skeleton;
+                        break;
+                    case (int)eMonsters.Zombie:
+                        ePlayerClass = eEquipmentRefType.Body_Zombie;
+                        break;
+                }
+                EquipmentManger.EquipItem_Static(EquipmentManger.GetEquipmentData_Static(ePlayerClass), out sStats, lEquiped, lStored);
+                EquipmentManger.EquipItem_Static(EquipmentManger.GetStartingEquipmentFromBody_Static(ePlayerClass), out sStats, lEquiped, lStored);
                 AI_Move = GetMyMoveFromIndex();
                 eAI_State = eAI_StateType.Sleeping;
                 break;
@@ -470,15 +314,180 @@ public class Player : MonoBehaviour, ICharacter
         
     }
 
+    public void EquipBasicSkills()
+    {
+        lEquiped.Add(EquipmentManger.GetEquipmentData_Static(eEquipmentRefType.Core_TreasureMap));
+        lEquiped.Add(EquipmentManger.GetEquipmentData_Static(eEquipmentRefType.Core_PassageMap));
+        lEquiped.Add(EquipmentManger.GetEquipmentData_Static(eEquipmentRefType.Core_TrapMap));
+        lEquiped.Add(EquipmentManger.GetEquipmentData_Static(eEquipmentRefType.Legs_PlayerBoots));
+        lEquiped.Add(EquipmentManger.GetEquipmentData_Static(eEquipmentRefType.Core_LockPick));
+        if (ePlayerClass == eEquipmentRefType.Body_Dwarf)
+            lEquiped.Add(EquipmentManger.GetEquipmentData_Static(eEquipmentRefType.Kit_TrapTools));
+        if (ePlayerClass == eEquipmentRefType.Body_Wizard || ePlayerClass == eEquipmentRefType.Body_Elf)
+            lEquiped.Add(EquipmentManger.GetEquipmentData_Static(eEquipmentRefType.Spell_BallOfFlame));
+    }
+
+    public void TakeDamage(int inDamage)
+    {
+        sStats.iHitPoints -= inDamage;
+    }
+    public void UpdateScanRange()
+    {
+       
+        List<HeroTile> lScanable = new List<HeroTile>();
+        List<HeroTile> lRoomID = new List<HeroTile>();
+        List<(Vector2Int, eNavType)> lStartPosAndDir = new List<(Vector2Int, eNavType)>()
+        {
+            (GetPosXY() + Vector2Int.zero, eNavType.East),
+            (GetPosXY() + Vector2Int.zero, eNavType.West),
+            (GetPosXY() + Vector2Int.zero, eNavType.North),
+            (GetPosXY() + Vector2Int.zero, eNavType.South),
+        };
+        
+        lRoomID.AddRange(pPathFinding.FindAllWithRoomID(arrGrid.GetGridObject(GetPosXY()).GetRoomID()));
+
+
+        if (!arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.North, eMoveableType.None))
+        {
+            lRoomID.AddRange(pPathFinding.FindAllWithRoomID(arrGrid.GetGridObject(GetPosXY() + BlackBocks.vNorth).GetRoomID()));
+            if(
+                !arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.West) &&
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vWest).IsBlocked(eNavType.North) &&
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vNorth).IsBlocked(eNavType.West)
+                
+                )
+            {
+                lStartPosAndDir.Add((GetPosXY() + BlackBocks.vWest, eNavType.North));
+            }
+
+            if (
+                !arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.East) && 
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vEast).IsBlocked(eNavType.North)&&
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vNorth).IsBlocked(eNavType.East))
+            {
+                lStartPosAndDir.Add((GetPosXY() + BlackBocks.vEast, eNavType.North));
+            }
+        }
+
+        if (!arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.East, eMoveableType.None))
+        {
+            lRoomID.AddRange(pPathFinding.FindAllWithRoomID(arrGrid.GetGridObject(GetPosXY() + BlackBocks.vEast).GetRoomID()));
+            if (
+                !arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.North) && 
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vNorth).IsBlocked(eNavType.East) &&
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vEast).IsBlocked(eNavType.North))
+            {
+                lStartPosAndDir.Add((GetPosXY() + BlackBocks.vNorth, eNavType.East));
+            }
+
+            if (
+                !arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.South) && 
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vSouth).IsBlocked(eNavType.East) &&
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vEast).IsBlocked(eNavType.South))
+            {
+                lStartPosAndDir.Add((GetPosXY() + BlackBocks.vSouth, eNavType.East));
+            }
+        }
+
+        if (!arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.South, eMoveableType.None))
+        {
+            lRoomID.AddRange(pPathFinding.FindAllWithRoomID(arrGrid.GetGridObject(GetPosXY() + BlackBocks.vSouth).GetRoomID()));
+            if (
+                !arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.West) && 
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vWest).IsBlocked(eNavType.South) &&
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vSouth).IsBlocked(eNavType.West))
+            {
+                lStartPosAndDir.Add((GetPosXY() + BlackBocks.vWest, eNavType.South));
+            }
+
+            if (!arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.East) && 
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vEast).IsBlocked(eNavType.South) &&
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vSouth).IsBlocked(eNavType.East)
+                )
+            {
+                lStartPosAndDir.Add((GetPosXY() + BlackBocks.vEast, eNavType.South));
+            }
+        }
+
+        if (!arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.West, eMoveableType.None))
+        {
+            lRoomID.AddRange(pPathFinding.FindAllWithRoomID(arrGrid.GetGridObject(GetPosXY() + BlackBocks.vWest).GetRoomID()));
+            if (
+                !arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.North) && 
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vNorth).IsBlocked(eNavType.West) &&
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vWest).IsBlocked(eNavType.North))
+
+            {
+                lStartPosAndDir.Add((GetPosXY() + BlackBocks.vNorth, eNavType.West));
+            }
+
+            if (
+                !arrGrid.GetGridObject(GetPosXY()).IsBlocked(eNavType.South) && 
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vSouth).IsBlocked(eNavType.West) && 
+                !arrGrid.GetGridObject(GetPosXY() + BlackBocks.vWest).IsBlocked(eNavType.South))
+            {
+                lStartPosAndDir.Add((GetPosXY() + BlackBocks.vSouth, eNavType.West));
+            }
+        }
+
+ 
+
+
+        foreach ((Vector2Int,eNavType) aPos in lStartPosAndDir)
+        {
+            List<HeroTile> lTestLine = pPathFinding.FindTileAlongDirection(aPos.Item1, aPos.Item2);
+            foreach (HeroTile aTile in lTestLine)
+            {
+                if (!lScanable.Contains(aTile))
+                {
+                    lScanable.Add(aTile);
+                }
+            }
+        }
+
+        foreach (HeroTile aTile in lRoomID)
+        {
+            if (!lScanable.Contains(aTile) && aTile.GetRoomID() != eRoomIDs.Hallways)
+            {
+                lScanable.Add(aTile);
+            }
+        }
+
+
+        lScanRange = lScanable;
+        foreach(HeroTile aTile in lScanable)
+        { 
+            aTile.bVisible = true;
+        }
+    }
+
     public void WaitForPlayerMove()
     {
     }
+
+    public void SkipPlayerMove()
+    {
+        iMovesRemaining = 0;
+        ePlayerState = ePlayerStateType.AtTarget;
+        ResetActRange();
+    }
+
+    public void SkipPlayerAct()
+    {
+        ePlayerState = ePlayerStateType.ActComplete;
+        if(!bFirstMove && bMoveReady)
+        {
+            bMoveReady = false;
+        }
+        ResetMoveRange();
+    }
+
 
     public void MoveRandomInRange()
     {
         if (lMoveRange.Count > 0)
         {
-            vMoveTarget = lMoveRange[(int)Random.Range(1, (int)(lMoveRange.Count - 1))].GetPosition();
+            vMoveTarget = lMoveRange[(int)Random.Range(0, (int)(lMoveRange.Count - 1))].GetPosition();
             if (!SetMoveTarget(vMoveTarget))
             {
                 Debug.LogError("Failed to get a next move");
@@ -503,8 +512,6 @@ public class Player : MonoBehaviour, ICharacter
         }
 
     }
-
-
 
     public void MoveFollowTarget()
     {
@@ -678,6 +685,54 @@ public class Player : MonoBehaviour, ICharacter
         bActReady = false;
     }
 
+    public void UpdateSkillStates()
+    {
+        foreach(EquipmentData aSkill in lEquiped)
+        {
+            switch (aSkill.eEquipmentRef)
+            {
+                case eEquipmentRefType.Legs_PlayerBoots:
+                    aSkill.eSkillReadyState = bMoveReady? eSkillReadyStateType.MoveReady:eSkillReadyStateType.Disabled;
+                    break;
+                case eEquipmentRefType.Core_LockPick:
+                    bool bAnyDoor = HeroMap.GetGridObject(GetPosXY().x,GetPosXY().y).GetNavTileIndex() == eNavTiles.DoorNorthClosed || HeroMap.GetGridObject(GetPosXY().x, GetPosXY().y).GetNavTileIndex() == eNavTiles.DoorSouthClosed;
+                    aSkill.eSkillReadyState = (bMoveReady && bAnyDoor) ? eSkillReadyStateType.MoveReady : eSkillReadyStateType.Disabled;
+                    break;
+
+                case eEquipmentRefType.Weapon_BattleAxe:
+                case eEquipmentRefType.Weapon_Broadsword:
+                case eEquipmentRefType.Weapon_Crossbow:
+                case eEquipmentRefType.Weapon_Dagger:
+                case eEquipmentRefType.Weapon_LongSword:
+                case eEquipmentRefType.Weapon_ShortSword:
+                case eEquipmentRefType.Weapon_Staff:
+                    aSkill.eSkillReadyState = !(!bActReady || lActRange.Count == 0 )? eSkillReadyStateType.ActReady : eSkillReadyStateType.Disabled;
+                    break;
+
+                case eEquipmentRefType.Body_Barbaian:
+                case eEquipmentRefType.Body_Dwarf:
+                case eEquipmentRefType.Body_Elf:
+                case eEquipmentRefType.Body_Wizard:
+                    aSkill.eSkillReadyState = eSkillReadyStateType.Passive;
+                    break;
+
+                case eEquipmentRefType.Core_PassageMap:
+                case eEquipmentRefType.Core_TrapMap:
+                case eEquipmentRefType.Core_TreasureMap:
+                    aSkill.eSkillReadyState = bActReady? eSkillReadyStateType.ActReady : eSkillReadyStateType.Disabled;
+                    break;
+                case eEquipmentRefType.Kit_TrapTools:
+                    bool bAnyTrap =
+                        HeroMap.GetGridObject(GetPosXY().x, GetPosXY().y).GetNavTileIndex() == eNavTiles.Pit ||
+                        HeroMap.GetGridObject(GetPosXY().x, GetPosXY().y).GetNavTileIndex() == eNavTiles.Rocks ||
+                        HeroMap.GetGridObject(GetPosXY().x, GetPosXY().y).GetNavTileIndex() == eNavTiles.Spear;
+                       
+                    aSkill.eSkillReadyState = (bMoveReady && bAnyTrap) ? eSkillReadyStateType.MoveReady : eSkillReadyStateType.Disabled;
+                    break;
+            }
+        }
+        OnSkillUpdate?.Invoke(lEquiped);
+    }
     public void GameCombatUpdate()
     {
         switch(ePlayerState)
@@ -688,23 +743,42 @@ public class Player : MonoBehaviour, ICharacter
                 if(eAI_State == eAI_StateType.Sleeping)
                 {
                     TryToWakeUp();
-                   
                 }
-                if(bMoveReady)
+                switch( eTeam)
                 {
-                    ePlayerState = ePlayerStateType.WaitingForMoveTarget;
-                    return;
+                    case eTeamType.EnemyTeam:
+                        if (bMoveReady)
+                        {
+                            ePlayerState = ePlayerStateType.WaitingForMoveTarget;
+                            return;
+                        }
+                        if (bActReady)
+                        {
+                            ePlayerState = ePlayerStateType.WaitingForActTarget;
+                            return;
+                        }
+                        ePlayerState = ePlayerStateType.Idle;
+                        break;
+                    case eTeamType.PlayerTeam:
+                        if (!bMoveReady && (!bActReady || lActRange.Count == 0))
+                        {
+
+                            UpdateSkillStates();
+                            ePlayerState = ePlayerStateType.Idle;
+                        }
+                        if (bMoveReady && AI_Move != WaitForPlayerMove)
+                        {
+                            UpdateSkillStates();
+                            ePlayerState = ePlayerStateType.WaitingForMoveTarget;
+                            return;
+                        }
+                        break;
                 }
-                if (bActReady)
-                {
-                    ePlayerState = ePlayerStateType.WaitingForActTarget;
-                    return;
-                }
-                ePlayerState = ePlayerStateType.Idle;
+
                 break;
             case ePlayerStateType.WaitingForActTarget:
                 
-                cDiceManager.RollForAttack(sStats.iAttackDice, eAttackFace, sStats.iDefenceDice, eDefenseFace);
+               // cDiceManager.RollForAttack(sStats.iAttackDice, eAttackFace, sStats.iDefenceDice, eDefenseFace);
                 bActReady = false;
                 ePlayerState = ePlayerStateType.TurnActive;
                 break;
@@ -712,7 +786,8 @@ public class Player : MonoBehaviour, ICharacter
                 if(Vector2.Distance(vPosition, vToOfMove) < fMoveSpeed/10f)
                 {
                     arrGrid.GetGridObject(vToOfMove).HasEntered(sMoveableKey);
-                    arrGrid.GetGridObject(vFromOfMove).HasLeft(sMoveableKey);                        
+                    arrGrid.GetGridObject(vFromOfMove).HasLeft(sMoveableKey);
+                    lActRange.Clear();
                     if (lCurrentPath.Count > 1)
                     {
                         //vMoveTarget = lCurrentPath[0].GetPosition();
@@ -727,18 +802,44 @@ public class Player : MonoBehaviour, ICharacter
                         ePlayerState = ePlayerStateType.AtTarget;
                         vPosition = vMoveTarget;
                         lMoveRange.Clear();
+                        bFirstMove = false;
+                    }
+                    if (eTeam == eTeamType.PlayerTeam)
+                    {
+                        UpdateScanRange();
+                        UpdateSkillStates();
                     }
                 }
                 else
                 {
                     vVelocity = (vToOfMove - vPosition); 
-                    vPosition = vPosition + vVelocity * fMoveSpeed * Time.deltaTime;
+                    vPosition += vVelocity * fMoveSpeed * Time.deltaTime;
 
                 }
                 break;
             case ePlayerStateType.AtTarget:
                 ePlayerState = ePlayerStateType.TurnActive;
                 bMoveReady = false;
+                if (iMovesRemaining > 0)
+                {
+                    //if (eTeam == eTeamType.PlayerTeam)
+                    if(AI_Move == WaitForPlayerMove)
+                    {
+                        ResetMoveRange();
+                        bMoveReady = true;
+                    }
+                }
+                if(bActReady)
+                {
+                    ResetActRange();
+                }
+                UpdateSkillStates();
+
+                break;
+            case ePlayerStateType.ActComplete:
+                ePlayerState = ePlayerStateType.TurnActive;
+                bActReady = false;
+                UpdateSkillStates();
                 break;
             case ePlayerStateType.WaitingForMoveTarget:
                 AI_Move();
@@ -749,7 +850,12 @@ public class Player : MonoBehaviour, ICharacter
 
                 if (eTeam == eTeamType.PlayerTeam)
                 {
-                    lMoveRange = pPathFinding.FindPathWithRange(GetPosXY(), cDiceManager.RollForMove(), sMoveableKey.Item1);
+                    bFirstMove = true;
+                    iMovesRemaining = DiceManager.RollForMove();
+                    ResetMoveRange();
+                    ResetActRange();
+
+                    UpdateScanRange();
                     if (lMoveRange.Count == 0)
                     {
                         bMoveReady = false;
@@ -785,10 +891,42 @@ public class Player : MonoBehaviour, ICharacter
                 }
 
                 ePlayerState = ePlayerStateType.TurnActive;
+                UpdateSkillStates();
                 break;
 
 
         }
+    }
+
+    private void ResetMoveRange()
+    {
+        lMoveRange.Clear();
+        List<HeroTile> tlMoveRange = pPathFinding.FindPathWithRange(GetPosXY(), iMovesRemaining, sMoveableKey.Item1);
+        foreach (HeroTile aTile in tlMoveRange)
+        {
+            if (aTile.bVisible)
+            {
+                lMoveRange.Add(aTile);
+            }
+        }
+    }
+
+    private void ResetActRange()
+    {
+        lActRange.Clear();
+        List<HeroTile> tActRange = pPathFinding.FindPathWithRange(GetPosXY(), iActRange);
+        foreach (HeroTile aTile in tActRange)
+        {
+            if (aTile.bVisible
+                && aTile.GetMoveable() != null
+                && aTile.GetMoveable().Count == 1
+                && aTile.GetMoveable()[0].Item1 != eMoveableType.Furniture
+                && aTile.GetMoveable()[0].Item1 != sMoveableKey.Item1)
+            {
+                lActRange.Add(aTile);
+            }
+        }
+
     }
     public float GetSpeedFromDistance()
     {

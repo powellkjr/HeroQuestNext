@@ -231,6 +231,8 @@ public class HeroTile : IPathable<HeroTile>
     public void GetPosition(out Vector3 outPos) { outPos = new Vector3(x, y); }
     public void GetPosition(out int outX, out int outY) { outX = x; outY = y; }
 
+    public bool IsVisible() { return bVisible; }
+
     
     public bool IsBlocked(eNavType inNavType, eMoveableType inMoveable = eMoveableType.None)
     {
@@ -244,7 +246,7 @@ public class HeroTile : IPathable<HeroTile>
         if(lMoveable.Count > 0)
         {
         //if the tile is not friendly
-             if(lMoveable[0].Item1 != inMoveable)
+             if(lMoveable[0].Item1 != inMoveable && inMoveable != eMoveableType.None)
             {
                 return true;
             }
@@ -298,6 +300,9 @@ public class HeroTile : IPathable<HeroTile>
     private float fTileScale;
     public BlackBocksGrid<HeroTile> gHostGrid;
     private List<(eMoveableType,int)> lMoveable;
+    public bool bVisible;
+    public bool bTreasureScanned;
+    public bool bTrapScanned;
 
     public List<(eMoveableType, int)> GetMoveable()
     {
@@ -429,7 +434,13 @@ public class HeroTile : IPathable<HeroTile>
         this.eNavTileIndex = inNavTileIndex;
         this.eFurnitureIndex = inFuritureTileIndex;
         this.lMoveable = new List<(eMoveableType, int)>();
-        
+        this.bTrapScanned = false;
+        this.bTreasureScanned = false;
+
+        this.bVisible = false;
+
+
+
     }
 
     public bool HasEntered((eMoveableType,int) inMoveable)
@@ -550,6 +561,10 @@ public class HeroTile : IPathable<HeroTile>
         {
             lMoveable.Add((iSaveObject.eMoveableItem1, iSaveObject.eMoveableItem2));
         }
-                
-}
+        bTrapScanned = false;
+        bTreasureScanned = false;
+        this.bVisible = false;
+
+
+    }
 }

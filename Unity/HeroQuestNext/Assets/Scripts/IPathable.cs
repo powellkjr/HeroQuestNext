@@ -16,6 +16,7 @@ public interface IPathable<TGridObject>
 
     void CalculateFCost();
     bool IsBlocked(eNavType inNavType, eMoveableType inMoveable);
+    eRoomIDs GetRoomID();
     List<(eMoveableType,int)> GetMoveable();
     void InitPathable(int x, int y);
 

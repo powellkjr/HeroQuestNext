@@ -9,10 +9,12 @@ public class MainMenu : MonoBehaviour
     {
         MainMenuScene,
         MainGameScene,
+       
     };
     public void PlayGame ()
     {
-        SceneManager.LoadScene(Scenes.MainGameScene.ToString());
+        //SceneManager.LoadScene(Scenes.MainGameScene.ToString());
+        Loader.Load(eScenesType.MainGameScene);
         Debug.Log("Play Clicked, Switching Scene to MainGameScene");
     }
 

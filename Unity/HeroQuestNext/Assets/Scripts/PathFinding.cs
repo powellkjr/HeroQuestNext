@@ -99,6 +99,7 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
     {
         return FindPathWithRange(inStartPos.x, inStartPos.y, inRange, inMoveable);
     }
+
     public List<TGridObject> FindPathWithRange(int inStartX, int inStartY, int inRange,eMoveableType inMoveable=eMoveableType.None)
     {
         if(!arrGrid.IsValid(inStartX, inStartY))
@@ -113,7 +114,7 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
             {
                 if (arrGrid.IsValid(x, y))
                 {
-                    if (arrGrid.GetGridObject(x, y).GetMoveable().Count == 0)
+                    if (arrGrid.GetGridObject(x, y).GetMoveable().Count == 0 || inMoveable  == eMoveableType.None)
                     {
                         List<TGridObject> Test = FindPath(inStartX, inStartY, x, y, inMoveable);
                         if (Test != null)
@@ -152,6 +153,69 @@ public class PathFinding<TGridObject> where TGridObject : IPathable<TGridObject>
                     {
                         lReturn.Add(arrGrid.GetGridObject(x, y));
                     }
+                }
+            }
+        }
+        return lReturn;
+    }
+
+    public List<TGridObject> FindTileAlongDirection(Vector2Int inStartPos, eNavType inDirection)
+    {
+        return FindTileAlongDirection(inStartPos.x, inStartPos.y, inDirection);
+    }
+    public List<TGridObject> FindTileAlongDirection(int inStartX, int inStartY, eNavType inDirection)
+    {
+        if (!arrGrid.IsValid(inStartX, inStartY))
+        {
+            return null;
+        }
+        List<TGridObject> lReturn = new List<TGridObject>();
+        TGridObject pStartNode = arrGrid.GetGridObject(inStartX, inStartY);
+        TGridObject pTestNode = arrGrid.GetGridObject(inStartX, inStartY);
+
+        lOpenList = new List<TGridObject> { pTestNode };
+
+        //for (int x = 0; x < arrGrid.GetWidth(); x++)
+        //{
+        //    for (int y = 0; y < arrGrid.GetHeight(); y++)
+        //    {
+        //        TGridObject pPathNode = arrGrid.GetGridObject(x, y);
+        //        pPathNode.iGCost = int.MaxValue;
+        //        pPathNode.CalculateFCost();
+        //        pPathNode.ICameFrom = default;
+        //    }
+        //}
+        while (lOpenList.Count > 0)
+        {
+            lOpenList.Remove(pTestNode);
+            Vector2Int vTestPos = new Vector2Int(pTestNode.x + HeroTile.vNavType[(int)inDirection].x, pTestNode.y + HeroTile.vNavType[(int)inDirection].y);
+            if (arrGrid.IsValid(vTestPos) && !arrGrid.GetGridObject(pTestNode.GetPosition()).IsBlocked(inDirection, eMoveableType.None))
+            {
+                pTestNode = arrGrid.GetGridObject(pTestNode.x + HeroTile.vNavType[(int)inDirection].x, pTestNode.y + HeroTile.vNavType[(int)inDirection].y);
+
+                
+                {
+                    lReturn.Add(pTestNode);
+                    lOpenList.Add(pTestNode);
+                }
+            }
+        }
+
+
+
+            return lReturn;
+    }
+
+    public List<TGridObject> FindAllWithRoomID(eRoomIDs inRoomID)
+    {
+        List<TGridObject> lReturn = new List<TGridObject>();
+        for(int x =0; x< arrGrid.GetWidth();x++)
+        {
+            for(int y=0; y < arrGrid.GetHeight();y++)
+            {
+                if (arrGrid.GetGridObject(x,y).GetRoomID()== inRoomID)
+                {
+                    lReturn.Add(arrGrid.GetGridObject(x, y));
                 }
             }
         }

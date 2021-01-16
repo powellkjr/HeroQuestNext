@@ -18,24 +18,31 @@ public  enum eDiceFace
 }
 
 
-public class DiceManager
+public class DiceManager : MonoBehaviour
 {
     public static DiceManager Instance { get; private set; }
 
     private static List<int> lMoveDice = new List<int> { 1, 2, 3, 4, 5, 6 };
-    private static List<string> lMoveDiceUnicode = new List<string> { "[\u2680]", "[\u2681]", "[\u2682]", "[\u2683]", "[\u2684]", "[\u2685]" };
+    private static List<string> lMoveDiceUnicode = new List<string> { "[ . ]", "[. .]", "[...]", "[: :]", "[:.:]", "[:::]" };
 
     private static List<eDiceFace> lCombatDice = new List<eDiceFace> { eDiceFace.Skull, eDiceFace.Skull, eDiceFace.Skull, eDiceFace.White, eDiceFace.White, eDiceFace.Black };
     private static List<string> lCombatDiceUnicode = new List<string> { "[\u2620]", "[\u2620]", "[\u2620]", "[\u2656]", "[\u2656]" ,"[\u263b]"};
-    
 
 
-    public DiceManager() // where TGridObject : IPathable
+
+    //public DiceManager() // where TGridObject : IPathable
+    //{
+    //    Instance = this;
+    //}
+    private void Awake()
     {
         Instance = this;
     }
-
-    public List<int> RollRedDice(int inDice)
+    public static List<int> RollRedDice(int inDice)
+    {
+        return Instance.RollRedDice_Internal(inDice);
+    }
+    public List<int> RollRedDice_Internal(int inDice)
     {
         string strLog = "RedDiceRoll: ";
         List<int> lReturn = new List<int>();
@@ -45,11 +52,14 @@ public class DiceManager
             lReturn.Add(lMoveDice[j]);
             strLog += lMoveDiceUnicode[j];
         }
-        Debug.Log(strLog);
+        //Debug.Log(strLog);
         return lReturn;
     }
-
-    public List<eDiceFace> RollCombatDice(int inDice)
+    public static List<eDiceFace> RollCombatDice(int inDice)
+    {
+        return Instance.RollCombatDice_Internal(inDice);
+    }
+    public List<eDiceFace> RollCombatDice_Internal(int inDice)
     {
         string strLog = "ComabtDiceRoll: ";
         List<eDiceFace> lReturn = new List<eDiceFace>();
@@ -63,7 +73,11 @@ public class DiceManager
         return lReturn;
     }
 
-    public int RollForMove()
+    public static int RollForMove()
+    {
+        return Instance.RollForMove_Internal();
+    }
+    public int RollForMove_Internal()
     {
         List<int> lRolls = RollRedDice(2);
         int iReturn = 0;
@@ -75,7 +89,11 @@ public class DiceManager
         return iReturn;
     }
 
-    public int RollForCombatFace(int inDice,eDiceFace inDiceFace)
+    public static int RollForCombatFace(int inDice, eDiceFace inDiceFace)
+    {
+        return Instance.RollForCombatFace_Internal(inDice, inDiceFace);
+    }
+    public int RollForCombatFace_Internal(int inDice,eDiceFace inDiceFace)
     {
         List<eDiceFace> lRolls = RollCombatDice(inDice);
         int iReturn = 0;
@@ -87,12 +105,16 @@ public class DiceManager
         return iReturn;
     }
 
-    public int RollForAttack(int inDice1, eDiceFace inDiceFace1, int inDice2, eDiceFace inDiceFace2)
+    public static int RollForAttack(int inDice1, eDiceFace inDiceFace1, int inDice2, eDiceFace inDiceFace2)
+    { 
+        return Instance.RollForAttack_Internal(inDice1, inDiceFace1, inDice2, inDiceFace2);
+    }
+    public int RollForAttack_Internal(int inDice1, eDiceFace inDiceFace1, int inDice2, eDiceFace inDiceFace2)
     {
-        int iAttack = RollForCombatFace(inDice1, inDiceFace1);
-        int iDefend = RollForCombatFace(inDice2, inDiceFace2);
+        int iAttack = Instance.RollForCombatFace_Internal(inDice1, inDiceFace1);
+        int iDefend = Instance.RollForCombatFace_Internal(inDice2, inDiceFace2);
         Debug.Log("RollForAttack: " + iAttack + lCombatDiceUnicode[(int)inDiceFace1] + ":" + iDefend + lCombatDiceUnicode[(int)inDiceFace2]);
-        return Mathf.Min(0,  iAttack - iDefend);
+        return Mathf.Max(0,  iAttack - iDefend);
     }
 }
 
