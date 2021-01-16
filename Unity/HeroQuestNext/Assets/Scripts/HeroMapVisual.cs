@@ -18,6 +18,7 @@ public enum eSpritePages
     EnemyTiles,
     MoveTiles,
     ActTiles,
+    PassiveTiles,
     ScanTiles,
 }
 public class HeroMapVisual : MonoBehaviour
@@ -49,6 +50,10 @@ public class HeroMapVisual : MonoBehaviour
     [SerializeField] private Texture2D tHeroMapMainSpriteSheetCheck;
     [SerializeField] private Material mHeroMapVisualMaterial;
 
+    private List<HeroTile> lUserRangeTileList = new List<HeroTile>();
+    private eSpritePages eUserRangeSpritePage;
+    private int iUserRangeSpriteIndex;
+    private bool bShowUserRange = false;
 
 
 
@@ -161,6 +166,7 @@ public class HeroMapVisual : MonoBehaviour
         Color[] arrEnemyColors = new Color[] { new Color(1, 1, 1, 0) };
         Color[] arrMoveColors = new Color[] { new Color(1, 1, 1, 0), new Color(0, 0, 1, 0), new Color(0, 0, 1, 0) };
         Color[] arrActColors = new Color[] { new Color(1, 1, 1, 0), new Color(1, 0, 0, 0), new Color(1, 0, 0, 0) };
+        Color[] arrPassiveColors = new Color[] { new Color(1, 1, 1, 0), new Color(0, 1, 0, 0), new Color(0, 1, 0, 0) };
         Color[] arrScanColors = new Color[] { new Color(1, 1, 1, 0), new Color(1, 1, 0, 0), new Color(1, 1, 0, 0) };
 
         for (int i = 0; i < iNumRooms; i++)
@@ -263,6 +269,9 @@ public class HeroMapVisual : MonoBehaviour
 
         AddNewTilesToSpritePageAndIndexToMainUVRect(tPlayerIcons, tPlayerIconsMask, arrActIconsSrcSpritePixelRect, vBaseTileReference, eSpritePages.ActTiles, arrActColors);
         mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
+
+        AddNewTilesToSpritePageAndIndexToMainUVRect(tPlayerIcons, tPlayerIconsMask, arrActIconsSrcSpritePixelRect, vBaseTileReference, eSpritePages.PassiveTiles, arrPassiveColors);
+        mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet; 
 
         AddNewTilesToSpritePageAndIndexToMainUVRect(tPlayerIcons, tPlayerIconsMask, arrScanIconsSrcSpritePixelRect, vBaseTileReference, eSpritePages.ScanTiles, arrScanColors);
         mHeroMapVisualMaterial.mainTexture = tHeroMapMainSpriteSheet;
@@ -379,9 +388,6 @@ public class HeroMapVisual : MonoBehaviour
     }
     public void UpdateHeroMapVisuals()
     {
-
-
-
         if (cGameCombatHandler != null)
         {
 
@@ -418,16 +424,16 @@ public class HeroMapVisual : MonoBehaviour
 
                 if (aPlayer.GetPlayerState() != ePlayerStateType.Idle)
                 {
-                    BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + (int)eMoveableLayerType.MoveTarget,
-                        arrGrid.GetWorldPosition(aPlayer.GetMoveTarget().x + .5f, aPlayer.GetMoveTarget().y + .5f)
-                        , 0, vQuadSize * .9f,
-                        dSpritePageAndIndexToMainUVRect[(eSpritePages.MoveTiles, (int)eVisualIcons.CornerSelector)]);
+                    //BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, i + (int)eMoveableLayerType.MoveTarget,
+                    //    arrGrid.GetWorldPosition(aPlayer.GetMoveTarget().x + .5f, aPlayer.GetMoveTarget().y + .5f)
+                    //    , 0, vQuadSize * .9f,
+                    //    dSpritePageAndIndexToMainUVRect[(eSpritePages.MoveTiles, (int)eVisualIcons.CornerSelector)]);
 
 
-                    DrawMoveRange(aPlayer);
-                    DrawActRange(aPlayer);
+                    //DrawMoveRange(aPlayer);
+                    //DrawActRange(aPlayer);
                     //DrawScanRange(aPlayer);
-                    DrawCurrentPath(aPlayer);
+                    //DrawCurrentPath(aPlayer);
                     
 
                 }
@@ -461,7 +467,10 @@ public class HeroMapVisual : MonoBehaviour
 
 
         }
-
+        if(bShowUserRange)
+        {
+            DrawUserRange(lUserRangeTileList, eUserRangeSpritePage, iUserRangeSpriteIndex);
+        }
         mMesh.vertices = vVertices;
         mMesh.uv = vUVs;
         mMesh.triangles = iTriangles;
@@ -585,6 +594,43 @@ public class HeroMapVisual : MonoBehaviour
         }
     }
 
+    public static void ShowUserRange(List<HeroTile> inTileList, eSpritePages inSpritePage, int inSpriteIndex)
+    {
+        Instance.lUserRangeTileList = inTileList;
+        Instance.eUserRangeSpritePage = inSpritePage;
+        Instance.iUserRangeSpriteIndex = inSpriteIndex;
+        Instance.bShowUserRange = true;
+    }
+    public static void ShowUserRange(HeroTile inTile, eSpritePages inSpritePage, int inSpriteIndex)
+    {
+        Instance.lUserRangeTileList = new List<HeroTile>() { inTile };
+        Instance.eUserRangeSpritePage = inSpritePage;
+        Instance.iUserRangeSpriteIndex = inSpriteIndex;
+        Instance.bShowUserRange = true;
+    }
+    public static void ShowUserRange()
+    {
+        Instance.bShowUserRange = true;
+    }
+    public static void HideUserRange()
+    {
+        Instance.bShowUserRange = false;
+    }
+
+    private void DrawUserRange(List<HeroTile> inTileList, eSpritePages inSpritePage, int inSpriteIndex)
+    {
+        if (inTileList != null)
+        {
+            foreach (HeroTile aTile in inTileList)
+            {
+                int j = aTile.GetPosition().x * arrGrid.GetHeight() * iNumLayers + aTile.GetPosition().y * iNumLayers;
+                BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, j + (int)eGameLayerType.ScanRange,
+                  arrGrid.GetWorldPosition(aTile.GetPosition().x + .5f, aTile.GetPosition().y + .5f)
+                  , 0, vQuadSize * .9f,
+                  dSpritePageAndIndexToMainUVRect[(inSpritePage, inSpriteIndex)]);
+            }
+        }
+    }
     private void DrawScanRange(Player inPlayer)
     {
         if (inPlayer.lScanRange != null)

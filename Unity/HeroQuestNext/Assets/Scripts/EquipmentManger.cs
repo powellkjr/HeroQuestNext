@@ -1,10 +1,12 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 
 public enum eEquipmentRefType
 {
+    Idle,
     Weapon_Broadsword,
     Weapon_ShortSword,
     Weapon_LongSword,
@@ -68,9 +70,18 @@ public enum eSkillReadyStateType
     Passive,
 
 }
+
+public enum eSkillTokenType
+{
+    Passive,
+    Movement,
+    Action,
+    Shop
+}
 public class EquipmentData
 {
     public eEquipmentRefType eEquipmentRef;
+    public eSkillTokenType eSkillToken;
     public eEquipmentSlotType eEquipmentSlot = eEquipmentSlotType.Weapon;
     public eEquipmentRangeType eEquipmentRange = eEquipmentRangeType.Melee_Adjacent;
     public int iMoveSquares = 0;
@@ -84,6 +95,9 @@ public class EquipmentData
     public string tToolTipLong;
     public int iCost = 0;
     public eSkillReadyStateType eSkillReadyState = eSkillReadyStateType.Disabled;
+    public Action OnMouseOver;
+    public Action OnMouseOut;
+    public Action OnActivate;
 
     public static EquipmentData operator +(EquipmentData sLeftSide, EquipmentData sRightSide)
     {
@@ -133,6 +147,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Core_TreasureMap,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Core,
             eEquipmentRange = eEquipmentRangeType.Scan,
             tToolTipShort ="SEARCH\nFOR TREASURE",
@@ -142,6 +157,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Core_PassageMap,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Core,
             eEquipmentRange = eEquipmentRangeType.Scan,
 
@@ -151,6 +167,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Core_TrapMap,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Core,
             eEquipmentRange = eEquipmentRangeType.Scan,
             tToolTipShort ="SEARCH\nFOR TRAPS",
@@ -159,6 +176,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Kit_TrapTools,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Kit,
             eEquipmentRange = eEquipmentRangeType.Self,
             tToolTipShort ="DISARM\n A TRAP",
@@ -168,6 +186,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Legs_PlayerBoots,
+            eSkillToken = eSkillTokenType.Movement,
             eEquipmentSlot = eEquipmentSlotType.Core,
             eEquipmentRange = eEquipmentRangeType.Scan,
 
@@ -177,6 +196,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Core_LockPick,
+            eSkillToken = eSkillTokenType.Movement,
             eEquipmentSlot = eEquipmentSlotType.Core,
             eEquipmentRange = eEquipmentRangeType.Tile_Adjacent,
             tToolTipShort ="MOVE\nOPEN DOOR",
@@ -188,6 +208,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Body_Barbaian,
+            eSkillToken = eSkillTokenType.Passive,
             eEquipmentSlot = eEquipmentSlotType.Body,
             iDefenceDice = 2,
             iHitPoints= 8,
@@ -203,6 +224,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Body_Dwarf,
+            eSkillToken = eSkillTokenType.Passive,
             eEquipmentSlot = eEquipmentSlotType.Body,
             iDefenceDice = 2,
             iHitPoints= 7,
@@ -217,6 +239,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Body_Elf,
+            eSkillToken = eSkillTokenType.Passive,
             eEquipmentSlot = eEquipmentSlotType.Body,
             iDefenceDice = 2,
             iHitPoints= 6,
@@ -232,6 +255,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Body_Wizard,
+            eSkillToken = eSkillTokenType.Passive,
             eEquipmentSlot = eEquipmentSlotType.Body,
             iDefenceDice = 2,
             iHitPoints= 4,
@@ -349,6 +373,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Weapon_Dagger,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Weapon,
             eEquipmentRange = eEquipmentRangeType.Range_Thrown,
             iAttackDice = 1,
@@ -366,6 +391,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Weapon_Broadsword,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Weapon,
             eEquipmentRange = eEquipmentRangeType.Melee_Adjacent,
             iAttackDice = 3,
@@ -383,6 +409,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Weapon_ShortSword,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Weapon,
             eEquipmentRange = eEquipmentRangeType.Melee_Adjacent,
             iAttackDice = 2,
@@ -400,6 +427,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Weapon_LongSword,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Weapon,
             eEquipmentRange = eEquipmentRangeType.Melee_AdjacentReach,
             iAttackDice = 2,
@@ -417,6 +445,7 @@ public class EquipmentManger : MonoBehaviour
                 new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Weapon_Crossbow,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Weapon,
             eEquipmentRange = eEquipmentRangeType.Range_Ranged,
             iAttackDice = 3,
@@ -434,6 +463,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Weapon_BattleAxe,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Weapon,
             eEquipmentRange = eEquipmentRangeType.Melee_Adjacent,
             iAttackDice = 4,
@@ -450,6 +480,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Weapon_Staff,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Weapon,
             eEquipmentRange = eEquipmentRangeType.Melee_AdjacentReach,
             iAttackDice = 1,
@@ -467,6 +498,7 @@ public class EquipmentManger : MonoBehaviour
                 new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Kit_TrapTools,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Weapon,
             eEquipmentRange = eEquipmentRangeType.Melee_AdjacentReach,
             iAttackDice = 1,
@@ -483,6 +515,7 @@ public class EquipmentManger : MonoBehaviour
         new EquipmentData
         {
             eEquipmentRef = eEquipmentRefType.Spell_BallOfFlame,
+            eSkillToken = eSkillTokenType.Action,
             eEquipmentSlot = eEquipmentSlotType.Spell,
             eEquipmentRange = eEquipmentRangeType.Range_Ranged,
             iAttackDice = 2,
@@ -493,9 +526,9 @@ public class EquipmentManger : MonoBehaviour
             eUseFace= eDiceFace.Skull,
             tToolTipShort ="SPELL\nBALL OF FLAME",
             tToolTipLong = "This spell may be cast at any one monster or player." +
-            "It will inflict two points of Body damage." +
-            "The victim may roll two dice. For each sheild" +
-            "he rolls he may reduce the damage by one.",
+            "\nIt will inflict two points of Body damage." +
+            "\nThe victim may roll two dice. For each sheild" +
+            "\nhe rolls he may reduce the damage by one.",
             eKeywords = new List<eKeywordType>(){eKeywordType.Discarded},
             iCost = 250,
         },
@@ -505,13 +538,14 @@ public class EquipmentManger : MonoBehaviour
 {
     {eKeywordType.Bulky, "<color=red>\n-May not be used with a Two-Handed weapon.</color>"},
     {eKeywordType.Cumbersome,"<color=red>\n-May not be used by the Wizard.</color>" },
-    {eKeywordType.Ranged,"<color= green>\n+You may fire at any moster that you can 'see'. </color><color=red>\n+You may not fire at any moster adjacent to you. </color>" },
-
-    {eKeywordType.Thrown,"<color=green>\n+You may throw at any moster that you can 'see'.  </color><color=red>\n-Weapon is lost once it is thrown.</color>" },
-    
+    {eKeywordType.Ranged,"<color= green>\n+You may fire at any moster that you can 'see'. </color>" +
+            "<color=red>\n+You may not fire at any moster adjacent to you. </color>" },
+    {eKeywordType.Thrown,"<color=green>\n+You may throw at any moster that you can 'see'.  </color>" +
+            "<color=red>\n-Weapon is lost once it is thrown.</color>" },
     {eKeywordType.Unlimited,"<color=green>\n+You have an unlimited supply of arrows.</color>"},
     {eKeywordType.Two_Handed,"<color=red>\n-Requires two hands to use, may not be used with a shield</color>" },
-    {eKeywordType.Trap, "<color=green>\n+On a shield the trap is disarmed and remove the trap.</color><color=red>\n-On a skull lose one Body point and remove the trap.</color>" },
+    {eKeywordType.Trap, "<color=green>\n+On a shield the trap is disarmed and remove the trap.</color>" +
+            "<color=red>\n-On a skull lose one Body point and remove the trap.</color>" },
     {eKeywordType.Discarded,"<color=red>\n-On use the spell is discarded." }
 };
     //public EquipmentManger()

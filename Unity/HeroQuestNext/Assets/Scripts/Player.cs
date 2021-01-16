@@ -90,7 +90,19 @@ public class Player : MonoBehaviour, ICharacter
 
     //public event EventHandler OnSkillUpdate;
     public Action<List<EquipmentData>> OnSkillUpdate;
+    public Action<List<HeroTile>, eSpritePages, int> ActiveSkillRange;
+    public eEquipmentRefType ActiveSkillRefType;
+    public Action HideUserRange;
 
+    private void OnSkillMouseOver()
+    {
+        Debug.LogWarning("MousedOver");
+    }
+
+    private void OnSkillActivate()
+    {
+        Debug.LogWarning("SkillActivated");
+    }
     private void OnSkillUpdate_Local(List<EquipmentData> inEquipmentData)
     {
         Debug.Log("OnSkillUpdate_Local" + inEquipmentData[0].tToolTipLong.ToString());
@@ -459,6 +471,7 @@ public class Player : MonoBehaviour, ICharacter
         { 
             aTile.bVisible = true;
         }
+
     }
 
     public void WaitForPlayerMove()
@@ -685,18 +698,63 @@ public class Player : MonoBehaviour, ICharacter
         bActReady = false;
     }
 
+    
+
     public void UpdateSkillStates()
     {
-        foreach(EquipmentData aSkill in lEquiped)
+        ActiveSkillRefType = eEquipmentRefType.Idle;
+        ActiveSkillRange = null;
+        HeroMapVisual.HideUserRange();
+        foreach (EquipmentData aSkill in lEquiped)
         {
+            //aSkill.OnActivate = OnSkillActivate;
+            //aSkill.OnMouseOver = OnSkillMouseOver;
+            aSkill.OnActivate = () => { 
+                Debug.LogWarning("Activating the skill: " + aSkill.tToolTipShort);
+                ActiveSkillRefType = aSkill.eEquipmentRef;
+            };
+            //aSkill.OnActivate += () => {ShowUserRange(HeroMap.GetNavNeighborsList(GetPosXY().x, GetPosXY().y), eSpritePages.MoveTiles, (int)eVisualIcons.OutlineSelector); };
+            aSkill.OnMouseOver = () => { Debug.LogWarning("Show Scan with" + aSkill.eEquipmentRange.ToString()); };
+            aSkill.OnMouseOut = () => { 
+                Debug.LogWarning("Disable Scan with" + aSkill.eEquipmentRange.ToString());
+                if (ActiveSkillRefType == eEquipmentRefType.Idle)
+                {
+                    HeroMapVisual.HideUserRange();
+                }
+            };
+
             switch (aSkill.eEquipmentRef)
             {
                 case eEquipmentRefType.Legs_PlayerBoots:
                     aSkill.eSkillReadyState = bMoveReady? eSkillReadyStateType.MoveReady:eSkillReadyStateType.Disabled;
+                    
+                    aSkill.OnActivate += () => 
+                    { 
+                        HeroMapVisual.ShowUserRange(lMoveRange, eSpritePages.MoveTiles, (int)eVisualIcons.CornerSelector);
+                        
+                    };
+                    aSkill.OnMouseOver += () =>
+                    {
+                        if (ActiveSkillRefType == eEquipmentRefType.Idle)
+                        {
+                            HeroMapVisual.ShowUserRange(lMoveRange, eSpritePages.MoveTiles, (int)eVisualIcons.OutlineSelector);
+                        }
+                    };
+
                     break;
                 case eEquipmentRefType.Core_LockPick:
                     bool bAnyDoor = HeroMap.GetGridObject(GetPosXY().x,GetPosXY().y).GetNavTileIndex() == eNavTiles.DoorNorthClosed || HeroMap.GetGridObject(GetPosXY().x, GetPosXY().y).GetNavTileIndex() == eNavTiles.DoorSouthClosed;
                     aSkill.eSkillReadyState = (bMoveReady && bAnyDoor) ? eSkillReadyStateType.MoveReady : eSkillReadyStateType.Disabled;
+                    aSkill.OnActivate += () => {
+                        HeroMapVisual.ShowUserRange(HeroMap.GetGridObject(GetPosXY()), eSpritePages.MoveTiles, (int)eVisualIcons.CornerSelector);
+                    };
+                    aSkill.OnMouseOver += () =>
+                        {
+                            if (ActiveSkillRefType == eEquipmentRefType.Idle)
+                            {
+                                HeroMapVisual.ShowUserRange(HeroMap.GetGridObject(GetPosXY()), eSpritePages.MoveTiles, (int)eVisualIcons.OutlineSelector);
+                            }
+                        };
                     break;
 
                 case eEquipmentRefType.Weapon_BattleAxe:
@@ -707,6 +765,20 @@ public class Player : MonoBehaviour, ICharacter
                 case eEquipmentRefType.Weapon_ShortSword:
                 case eEquipmentRefType.Weapon_Staff:
                     aSkill.eSkillReadyState = !(!bActReady || lActRange.Count == 0 )? eSkillReadyStateType.ActReady : eSkillReadyStateType.Disabled;
+                    aSkill.OnActivate += () => 
+                    {
+
+                            HeroMapVisual.ShowUserRange(lActRange, eSpritePages.ActTiles, (int)eVisualIcons.CornerSelector);
+                        
+                    };
+                    aSkill.OnMouseOver += () => 
+                    {
+                        if (ActiveSkillRefType == eEquipmentRefType.Idle)
+                        {
+                            HeroMapVisual.ShowUserRange(lActRange, eSpritePages.ActTiles, (int)eVisualIcons.OutlineSelector);
+                        }
+                    };
+
                     break;
 
                 case eEquipmentRefType.Body_Barbaian:
@@ -714,12 +786,29 @@ public class Player : MonoBehaviour, ICharacter
                 case eEquipmentRefType.Body_Elf:
                 case eEquipmentRefType.Body_Wizard:
                     aSkill.eSkillReadyState = eSkillReadyStateType.Passive;
+                    aSkill.OnActivate += () => { HeroMapVisual.ShowUserRange(HeroMap.GetGridObject(GetPosXY()), eSpritePages.PassiveTiles, (int)eVisualIcons.CornerSelector); };
+                    aSkill.OnMouseOver += () =>
+                    {
+                        if (ActiveSkillRefType == eEquipmentRefType.Idle)
+                        {
+                            HeroMapVisual.ShowUserRange(HeroMap.GetGridObject(GetPosXY()), eSpritePages.PassiveTiles, (int)eVisualIcons.OutlineSelector);
+                        }
+                    };
+
                     break;
 
                 case eEquipmentRefType.Core_PassageMap:
                 case eEquipmentRefType.Core_TrapMap:
                 case eEquipmentRefType.Core_TreasureMap:
                     aSkill.eSkillReadyState = bActReady? eSkillReadyStateType.ActReady : eSkillReadyStateType.Disabled;
+                    aSkill.OnActivate += () => { HeroMapVisual.ShowUserRange(lScanRange, eSpritePages.ScanTiles, (int)eVisualIcons.CornerSelector); };
+                    aSkill.OnMouseOver += () => 
+                    {
+                        if (ActiveSkillRefType == eEquipmentRefType.Idle)
+                        {
+                            HeroMapVisual.ShowUserRange(lScanRange, eSpritePages.ScanTiles, (int)eVisualIcons.OutlineSelector);
+                        }
+                    };
                     break;
                 case eEquipmentRefType.Kit_TrapTools:
                     bool bAnyTrap =
@@ -728,6 +817,14 @@ public class Player : MonoBehaviour, ICharacter
                         HeroMap.GetGridObject(GetPosXY().x, GetPosXY().y).GetNavTileIndex() == eNavTiles.Spear;
                        
                     aSkill.eSkillReadyState = (bMoveReady && bAnyTrap) ? eSkillReadyStateType.MoveReady : eSkillReadyStateType.Disabled;
+                    aSkill.OnActivate += () => { HeroMapVisual.ShowUserRange( HeroMap.GetGridObject(GetPosXY()) , eSpritePages.ActTiles, (int)eVisualIcons.CornerSelector); };
+                    aSkill.OnMouseOver += () =>
+                    {
+                        if (ActiveSkillRefType == eEquipmentRefType.Idle)
+                        {
+                            HeroMapVisual.ShowUserRange(HeroMap.GetGridObject(GetPosXY()), eSpritePages.ActTiles, (int)eVisualIcons.OutlineSelector);
+                        }
+                    };
                     break;
             }
         }
@@ -762,7 +859,8 @@ public class Player : MonoBehaviour, ICharacter
                     case eTeamType.PlayerTeam:
                         if (!bMoveReady && (!bActReady || lActRange.Count == 0))
                         {
-
+                            bMoveReady = false;
+                            bActReady = false;
                             UpdateSkillStates();
                             ePlayerState = ePlayerStateType.Idle;
                         }

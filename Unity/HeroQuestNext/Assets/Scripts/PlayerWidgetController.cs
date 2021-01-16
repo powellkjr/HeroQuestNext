@@ -83,7 +83,7 @@ public class PlayerWidgetController : MonoBehaviour
             tMenuItemText.SetText("<size=13><b><align=center>" + aSkillData.tToolTipShort + "</align></b></size>");
             lSkillString.Add(aSkillData.tToolTipShort);
             string sSkillColor = ColorUtility.ToHtmlStringRGB(dGetColorFromState[aSkillData.eSkillReadyState]);
-            string sToolTipTitleText = "<size=17><b>" + aSkillData.tToolTipShort + "</b></size>\n<size=15><i><color=#" + sSkillColor + ">" + aSkillData.eSkillReadyState + "</color></i></size>";
+            string sToolTipTitleText = "<size=17><b>" + aSkillData.tToolTipShort + "</b></size>\n<size=15><i><color=#" + sSkillColor + ">" + aSkillData.eSkillToken + "</color></i></size>";
             string sToolTipBodyText = aSkillData.tToolTipLong;
             if (aSkillData.eKeywords.Count > 0)
             {
@@ -106,7 +106,10 @@ public class PlayerWidgetController : MonoBehaviour
                 return sToolTipBodyText;
             };
             tMenuItem.GetComponent<BlackBocks_UI>().OnMouseOverOnceFunc = () => UIToolTip.ShowToolTip_Static(getToolTipTitleTextFunc, getToolTipBodyTextFunc);
+            tMenuItem.GetComponent<BlackBocks_UI>().OnMouseOverOnceFunc += () => aSkillData.OnMouseOver();
             tMenuItem.GetComponent<BlackBocks_UI>().OnMouseOutOnceFunc = () => UIToolTip.HideToolTip_Static();
+            tMenuItem.GetComponent<BlackBocks_UI>().OnMouseOutOnceFunc += () => aSkillData.OnMouseOut();
+            tMenuItem.GetComponent<BlackBocks_UI>().OnMouseLeftClickFunc = () => aSkillData.OnActivate();
             tMenuItemBackGround.color = dGetColorFromState[aSkillData.eSkillReadyState];
             lPlayerMenuItems.Add(tMenuItem);
             i++;

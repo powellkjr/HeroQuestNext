@@ -131,6 +131,7 @@ public class GameCombatHandler : MonoBehaviour
         //HeroMapVisual.Instance.SetGameCombatHandler(Instance);
         //lPlayerTeam[0].OnSkillUpdate += PlayerWidgetController.Instance.PlayerWidgetController_OnSkillUpdate;
         lPlayerTeam[0].OnSkillUpdate += PlayerWidgetController.SetPlayerWidgetText_Static;
+        
 
     }
 
