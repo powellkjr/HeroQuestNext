@@ -1,7 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using System;
+using Random = UnityEngine.Random;
 
 public enum eDiceTypes
 {
@@ -28,6 +29,8 @@ public class DiceManager : MonoBehaviour
     private static List<eDiceFace> lCombatDice = new List<eDiceFace> { eDiceFace.Skull, eDiceFace.Skull, eDiceFace.Skull, eDiceFace.White, eDiceFace.White, eDiceFace.Black };
     private static List<string> lCombatDiceUnicode = new List<string> { "[\u2620]", "[\u2620]", "[\u2620]", "[\u2656]", "[\u2656]" ,"[\u263b]"};
 
+    public Action<List<int>> OnMovmentRoll;
+    public Action<int,int,int> OnRollForAttack;
 
 
     //public DiceManager() // where TGridObject : IPathable
@@ -86,6 +89,7 @@ public class DiceManager : MonoBehaviour
             iReturn += aRoll;
         }
         Debug.Log("MoveRoll: " + iReturn);
+        OnMovmentRoll?.Invoke(lRolls);
         return iReturn;
     }
 
@@ -113,8 +117,12 @@ public class DiceManager : MonoBehaviour
     {
         int iAttack = Instance.RollForCombatFace_Internal(inDice1, inDiceFace1);
         int iDefend = Instance.RollForCombatFace_Internal(inDice2, inDiceFace2);
+        int iTotal = Mathf.Max(0, iAttack - iDefend);
         Debug.Log("RollForAttack: " + iAttack + lCombatDiceUnicode[(int)inDiceFace1] + ":" + iDefend + lCombatDiceUnicode[(int)inDiceFace2]);
-        return Mathf.Max(0,  iAttack - iDefend);
+
+        OnRollForAttack?.Invoke(iAttack, iDefend, iTotal);
+        return iTotal;
+
     }
 }
 

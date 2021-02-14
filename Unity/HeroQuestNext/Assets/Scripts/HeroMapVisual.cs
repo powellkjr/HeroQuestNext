@@ -633,9 +633,9 @@ public class HeroMapVisual : MonoBehaviour
     }
     private void DrawScanRange(Player inPlayer)
     {
-        if (inPlayer.lScanRange != null)
+        if (inPlayer.GetScanRange() != null)
         {
-            foreach (HeroTile aTile in inPlayer.lScanRange)
+            foreach (HeroTile aTile in inPlayer.GetScanRange())
             {
                 int j = aTile.GetPosition().x * arrGrid.GetHeight() * iNumLayers + aTile.GetPosition().y * iNumLayers;
                 BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, j + (int)eGameLayerType.ScanRange,
@@ -647,19 +647,19 @@ public class HeroMapVisual : MonoBehaviour
     }
     private void DrawCurrentPath(Player inPlayer)
     {
-        if (inPlayer.lCurrentPath != null)
+        if (inPlayer.GetCurrentPath() != null)
         {
-            for (int iPathIndex = 0; iPathIndex < inPlayer.lCurrentPath.Count - 1; iPathIndex++)
+            for (int iPathIndex = 0; iPathIndex < inPlayer.GetCurrentPath().Count - 1; iPathIndex++)
             {
-                Debug.DrawLine(arrGrid.GetWorldPosition(inPlayer.lCurrentPath[iPathIndex + 0].x + .5f, inPlayer.lCurrentPath[iPathIndex + 0].y + .5f),
-                        arrGrid.GetWorldPosition(inPlayer.lCurrentPath[iPathIndex + 1].x + .5f, inPlayer.lCurrentPath[iPathIndex + 1].y + .5f),
+                Debug.DrawLine(arrGrid.GetWorldPosition(inPlayer.GetCurrentPath()[iPathIndex + 0].x + .5f, inPlayer.GetCurrentPath()[iPathIndex + 0].y + .5f),
+                        arrGrid.GetWorldPosition(inPlayer.GetCurrentPath()[iPathIndex + 1].x + .5f, inPlayer.GetCurrentPath()[iPathIndex + 1].y + .5f),
                         Color.blue, 0, false);
 
             }
-            if (inPlayer.lCurrentPath.Count > 0)
+            if (inPlayer.GetCurrentPath().Count > 0)
             {
                 Debug.DrawLine(arrGrid.GetWorldPosition(inPlayer.GetPos().x + .5f, inPlayer.GetPos().y + .5f),
-                            arrGrid.GetWorldPosition(inPlayer.lCurrentPath[0].x + .5f, inPlayer.lCurrentPath[0].y + .5f),
+                            arrGrid.GetWorldPosition(inPlayer.GetCurrentPath()[0].x + .5f, inPlayer.GetCurrentPath()[0].y + .5f),
                             Color.blue, 0, false);
             }
         }
@@ -667,9 +667,9 @@ public class HeroMapVisual : MonoBehaviour
 
     private void DrawMoveRange(Player inPlayer)
     {
-        if (inPlayer.lMoveRange != null)
+        if (inPlayer.GetMoveRange() != null)
         {
-            foreach (HeroTile aTile in inPlayer.lMoveRange)
+            foreach (HeroTile aTile in inPlayer.GetMoveRange())
             {
                 int j = aTile.GetPosition().x * arrGrid.GetHeight() * iNumLayers + aTile.GetPosition().y * iNumLayers;
                 BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, j + (int)eGameLayerType.MoveRange,
@@ -683,9 +683,9 @@ public class HeroMapVisual : MonoBehaviour
 
     private void DrawActRange(Player inPlayer)
     {
-        if (inPlayer.lActRange != null)
+        if (inPlayer.GetActRange() != null)
         {
-            foreach (HeroTile aTile in inPlayer.lActRange)
+            foreach (HeroTile aTile in inPlayer.GetActRange())
             {
                 int j = aTile.GetPosition().x * arrGrid.GetHeight() * iNumLayers + aTile.GetPosition().y * iNumLayers;
                 BlackBocks.AddToMeshArrays(vVertices, vUVs, iTriangles, j + (int)eGameLayerType.MoveRange,

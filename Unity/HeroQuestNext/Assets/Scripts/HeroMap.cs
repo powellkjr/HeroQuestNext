@@ -51,6 +51,11 @@ public class HeroMap : MonoBehaviour
         return Instance.GetNavNeighborsList_Internal(inX, inY);
     }
 
+    public static List<HeroTile> GetNavNeighborsList(Vector2Int inXY)
+    {
+        return Instance.GetNavNeighborsList_Internal(inXY.x, inXY.y);
+    }
+
 
     public static void TriggerGridObjectChanged(Vector2Int inXY)
     {

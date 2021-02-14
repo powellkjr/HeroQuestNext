@@ -1,7 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using System;
+using Random = UnityEngine.Random;
 public class GameCombatHandler : MonoBehaviour
 {
     //private BlackBocksGrid<HeroTile> arrGrid;
@@ -16,6 +17,7 @@ public class GameCombatHandler : MonoBehaviour
     public (eSpritePages, eVisualIcons, Vector2Int) sCursor;
 
     Player pCurrentPlayer;
+    public Action<string, string> OnEnemyKilled;
 
     public struct PlayerInit
     {
@@ -63,6 +65,7 @@ public class GameCombatHandler : MonoBehaviour
         new Vector3Int(15, 2,(int)eMonsters.ChaosWarrior),
     };
 
+    public Action <(eMoveableType, int), HeroTile> OnPlayerUsedSkill;
     private static int iPlayerCount = lPlayerStartPos.Count;
     private static int iEnmeyCount = lEnemyStartPos.Count;
     [SerializeField]
@@ -101,18 +104,26 @@ public class GameCombatHandler : MonoBehaviour
             }
         }
         lPlayerTeam = new List<Player>();
+        int iPlayer_User = Random.Range(0, iUsePlayers);
         for (int i = 0; i < Mathf.Min(iUsePlayers, iPlayerCount); i++)
         {
-            int iThisPlayer = Random.Range(0, lPlayerStartPos.Count);
-            lPlayerTeam.Add(new Player((eMoveableType.Player, i), lPlayerStartPos[iThisPlayer]));
-            lPlayerStartPos.RemoveAt(iThisPlayer);
+            int iThisStart = Random.Range(0, lPlayerStartPos.Count);
+            if (i == iPlayer_User)
+            {
+                lPlayerTeam.Add(new Player_User((eMoveableType.Player, i), lPlayerStartPos[iThisStart]));
+            }
+            else
+            {
+                lPlayerTeam.Add(new Player_Agent((eMoveableType.Player, i), lPlayerStartPos[iThisStart]));
+            }
+            lPlayerStartPos.RemoveAt(iThisStart);
+
         }
 
         lEnemyTeam = new List<Player>();
         if (iUseEnemies == 1)
         {
-            lEnemyTeam.Add(new Player((eMoveableType.Enemy, 0), new Vector3Int(3, 1, (int)eMonsters.Gargoyle)));
-
+            lEnemyTeam.Add(new Player_Enemy((eMoveableType.Enemy, 0), new Vector3Int(3, 1, (int)eMonsters.Gargoyle)));
         }
         else
         {
@@ -121,7 +132,7 @@ public class GameCombatHandler : MonoBehaviour
             for (int i = 0; i < Mathf.Min(iUseEnemies, iEnmeyCount); i++)
             {
                 int iThisPlayer = Random.Range(0, lEnemyStartPos.Count);
-                lEnemyTeam.Add(new Player((eMoveableType.Enemy, i), lEnemyStartPos[iThisPlayer]));
+                lEnemyTeam.Add(new Player_Enemy((eMoveableType.Enemy, i), lEnemyStartPos[iThisPlayer]));
                 lEnemyStartPos.RemoveAt(iThisPlayer);
             }
         }
@@ -130,7 +141,9 @@ public class GameCombatHandler : MonoBehaviour
         GetNextPlayerTurn();
         //HeroMapVisual.Instance.SetGameCombatHandler(Instance);
         //lPlayerTeam[0].OnSkillUpdate += PlayerWidgetController.Instance.PlayerWidgetController_OnSkillUpdate;
-        lPlayerTeam[0].OnSkillUpdate += PlayerWidgetController.SetPlayerWidgetText_Static;
+        //lPlayerTeam[iPlayer_User].OnSkillUpdate += PlayerWidgetController.SetPlayerWidgetText_Static;
+
+
         
 
     }
@@ -139,7 +152,8 @@ public class GameCombatHandler : MonoBehaviour
     void Update()
     {
         sCursor = (eSpritePages.MoveTiles, eVisualIcons.CornerSelector, pCurrentPlayer.GetPosXY());
-        if (pCurrentPlayer.GetMoveableKey().Item1 == eMoveableType.Player && pCurrentPlayer.GetPlayerState() == ePlayerStateType.TurnActive)
+        if (pCurrentPlayer.GetMoveableKey().Item1 == eMoveableType.Player 
+            && pCurrentPlayer.GetPlayerState() == ePlayerStateType.TurnActive)
         {
 
             Vector3 vMousePositon = BlackBocks.GetMouseWorldPosition();
@@ -148,58 +162,13 @@ public class GameCombatHandler : MonoBehaviour
             {
                 sCursor = (eSpritePages.ScanTiles, eVisualIcons.CornerSelector, vEndPos);
                 HeroMap.TriggerGridObjectChanged(vEndPos);
-
-                if (pCurrentPlayer.CanAct() && pCurrentPlayer.lActRange != null && pCurrentPlayer.lActRange.Count > 0 && (pCurrentPlayer.lActRange.Contains(HeroMap.GetGridObject(vEndPos)) || pCurrentPlayer.GetPosXY() == vEndPos))
+                if (Input.GetMouseButtonDown(0))
                 {
-                    sCursor = (eSpritePages.ActTiles, eVisualIcons.CornerSelector, vEndPos);
-                    //arrGrid.TriggerGridObjectChanged(vEndPos);
-                    //hHeatMapVisual.bDebugEnabled = bDebugEnabled;
-                    if (Input.GetMouseButtonDown(1))
-                    {
-                        if (vEndPos == pCurrentPlayer.GetPosXY())
-                        {
-                            pCurrentPlayer.SkipPlayerAct();
-                        }
-                        List<(eMoveableType, int)> tMoveable = HeroMap.GetGridObject(vEndPos).GetMoveable();
-                        if (tMoveable != null && tMoveable.Count == 1)
-                        {
-                            if (tMoveable[0].Item1 == eMoveableType.Enemy)
-                            {
-                                Player tEnemy = GetEnemyPlayerFromRef(tMoveable[0].Item2);
-                                StartCombat(pCurrentPlayer, tEnemy, out bool bTargetkilled);
-                                if (bTargetkilled)
-                                {
-                                    
-                                    int iRemove = GetEnemyIndexFromRef(tMoveable[0].Item2);
-                                    lEnemyTeam.RemoveAt(iRemove);
-                                            HeroMap.GetGridObject(vEndPos).HasLeft(tEnemy.GetMoveableKey());
-                                }
-                                pCurrentPlayer.SkipPlayerAct();
-                            }
-                        }
-
-
-                    }
+                    OnPlayerUsedSkill(pCurrentPlayer.GetMoveableKey(), HeroMap.GetGridObject(vEndPos));
                 }
-                if (pCurrentPlayer.CanMove() && pCurrentPlayer.lMoveRange != null && pCurrentPlayer.lMoveRange.Count > 0 && (pCurrentPlayer.lMoveRange.Contains(HeroMap.GetGridObject(vEndPos)) || pCurrentPlayer.GetPosXY() == vEndPos))
-                {
+                //OnPlayerUsedSkill?.Invoke(tEnemy.GetPlayerName(), pCurrentPlayer.GetPlayerName());
 
-                    sCursor = (eSpritePages.MoveTiles, eVisualIcons.CornerSelector, vEndPos);
-                    //arrGrid.TriggerGridObjectChanged(vEndPos);
-                    //hHeatMapVisual.bDebugEnabled = bDebugEnabled;
-                    if (Input.GetMouseButtonDown(0))
-                    {
-                        if (vEndPos == pCurrentPlayer.GetPosXY())
-                        {
-                            pCurrentPlayer.SkipPlayerMove();
-                        }
-                        else
-                        {
-                            pCurrentPlayer.SetMoveTarget(vEndPos);
-
-                        }
-                    }
-                }
+                
             }
         }
 
@@ -218,6 +187,28 @@ public class GameCombatHandler : MonoBehaviour
         GetNextPlayerTurn();
 
 
+    }
+
+    public void Player_OnPlayerTryCombat((eMoveableType, int) inAttacker, HeroTile inDefenderTile, Action inOnComplete)
+    {
+        List<(eMoveableType, int)> tMoveable = inDefenderTile.GetMoveable();
+        if (tMoveable != null && tMoveable.Count == 1)
+        {
+            if (tMoveable[0].Item1 == eMoveableType.Enemy)
+            {
+                Player tEnemy = GetEnemyPlayerFromRef(tMoveable[0].Item2);
+                StartCombat(pCurrentPlayer, tEnemy, out bool bTargetkilled);
+                if (bTargetkilled)
+                {
+                    OnEnemyKilled?.Invoke(tEnemy.GetPlayerName(), pCurrentPlayer.GetPlayerName());
+                    int iRemove = GetEnemyIndexFromRef(tMoveable[0].Item2);
+                    lEnemyTeam.RemoveAt(iRemove);
+                    inDefenderTile.HasLeft(tEnemy.GetMoveableKey());
+                }
+                pCurrentPlayer.SkipPlayerAct();
+            }
+        }
+        inOnComplete();
     }
 
     public Player GetEnemyPlayerFromRef(int inRef)

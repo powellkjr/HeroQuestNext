@@ -98,6 +98,7 @@ public class EquipmentData
     public Action OnMouseOver;
     public Action OnMouseOut;
     public Action OnActivate;
+    
 
     public static EquipmentData operator +(EquipmentData sLeftSide, EquipmentData sRightSide)
     {
